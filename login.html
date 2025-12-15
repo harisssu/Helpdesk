@@ -10,61 +10,67 @@
                 justify-content: center;
                 align-items: center;
                 background: #ffffff;
-                position: relative;
-                overflow: hidden;
             }
+
             .container {
                 width: 400px;
-                margin: auto;
                 background: rgb(240, 237, 237);
                 padding: 2rem;
                 border-radius: 10px;
-                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 20px rgba(154, 76, 76, 0.1);
             }
+
             .title {
-                color: #000000;
-                font-size: 1.8rem;
+                text-align: center;
+                font-size: 2.2rem;
                 font-weight: bold;
-                margin-bottom: 1rem;
-                text-align: center;
-            }
-            .form-group {
                 margin-bottom: 1.5rem;
-                margin-left: 2rem;
             }
-            .link {
-                margin-top: 1.5rem;
-                text-align: center;
-                font-size: 1rem;
+
+            .form-group {
+                display: flex;
+                align-items: center;
+                margin-bottom: 1.5rem;
             }
-            .buttonlogin {
-                width: 30%;
+
+            label {
+                width: 120px;
+                margin-right: 10px;
+                font-weight: 500;
+                color: #000000;
+            }
+
+            input {
+                flex: 1;      
                 padding: 0.2rem;
-                background: #d0cece;
-                color: rgb(0, 0, 0);
-                border-radius: 30px;
-                font-size: 1rem;
+                border: 2px solid #1d0e0e;
+                font-size: 0.9rem;
+            }
+
+            .buttonlogin {
+                width: 25%;
+                padding: 0.2rem;
+                background: #ffffff;
+                border-radius: 50px;
                 font-weight: bold;
                 cursor: pointer;
-                margin-left: 8rem;
-            }
-            label {
                 display: block;
-                margin-bottom: 0.5rem;
-                color: #444;
-                font-weight: 500;
+                margin: 1rem auto;
             }
-            input {
-                width: 100%;
-                border: 2px solid #1d0e0e;
-                border-radius: 0px;
+
+            .link {
+                margin-top: 1.5rem;
+                display: flex;
+                justify-content: center;
+                gap: 70px; 
                 font-size: 1rem;
             }
+
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="title">e-ICT Aduan</div>
+            <div class="title">E-ICT Aduan</div>
             <div class="form-group">
                 <label for ="noIC">Nombor IC: </label>
                 <input type="text" id="noIC" required />
@@ -81,6 +87,5 @@
                 <a href="h.html">Lupa Kata Laluan?</a>
             </div>
         </div>
-        
     </body>
 </html>
