@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title> E-ICT Aduan</title>  <!-- tab title -->
+
+        <!-- set image as background -->
+        <style> 
+            body {
+                margin: 0;
+                height: 100vh;
+                background-image:
+                    linear-gradient(
+                        rgb(1, 1, 1),
+                        rgba(0, 0, 0, 0.282)
+                    ),
+                    url("bg.jpg");
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                color: white; 
+            }
+        </style>
+    </head>
+</html>
