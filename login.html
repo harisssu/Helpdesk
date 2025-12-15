@@ -9,22 +9,24 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                background: #cbcbcb;
+                background: #ffffff;
                 position: relative;
                 overflow: hidden;
             }
             .container {
                 max-width: 800px;
                 margin: auto;
-                background: white;
+                background: rgb(240, 237, 237);
                 padding: 2rem;
                 border-radius: 10px;
                 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             }
             .title {
-                font-size: 2rem;
-                color: black;
+                color: #000000;
+                font-size: 1.8rem;
                 font-weight: bold;
+                margin-bottom: 1rem;
+                text-align: center;
             }
             .form-group {
                 margin-bottom: 1.5rem;
@@ -33,17 +35,19 @@
     </head>
     <body>
         <div class="container">
+            <div class="title">e-ICT Aduan</div>
             <div class="form-group">
-                <div class="title">e-ICT Aduan</div>
                 <label for ="noIC">Nombor IC: </label>
                 <input type="text" id="noIC" required />
             </div>
 
             <div class="form-group">
-                <label for ="pass">Password: </label>
+                <label for ="pass">Kata Laluan: </label>
                 <input type="password" id="pass" required />
             </div>
             <button type="submit">Log Masuk</button>
+            <button type="submit">Daftar Masuk</button>
+            <button type="submit">Lupa Kata Laluan?</button>
         </div>
         
     </body>
