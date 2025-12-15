@@ -9,13 +9,42 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                background: #EBEBEB;
+                background: #cbcbcb;
                 position: relative;
                 overflow: hidden;
+            }
+            .container {
+                max-width: 800px;
+                margin: auto;
+                background: white;
+                padding: 2rem;
+                border-radius: 10px;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            }
+            .title {
+                font-size: 2rem;
+                color: black;
+                font-weight: bold;
+            }
+            .form-group {
+                margin-bottom: 1.5rem;
             }
         </style>
     </head>
     <body>
+        <div class="container">
+            <div class="form-group">
+                <div class="title">e-ICT Aduan</div>
+                <label for ="noIC">Nombor IC: </label>
+                <input type="text" id="noIC" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="pass">Password: </label>
+                <input type="password" id="pass" required />
+            </div>
+            <button type="submit">Log Masuk</button>
+        </div>
         
     </body>
 </html>
