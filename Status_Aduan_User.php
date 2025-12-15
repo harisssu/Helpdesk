@@ -97,6 +97,55 @@ body {
     background: #f7f7f7;
     overflow: auto;
 }
+
+.aduan-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.aduan-table th,
+.aduan-table td {
+    border: 1px solid #000;
+    padding: 10px;
+    text-align: center;
+}
+
+.aduan-table th {
+    background: #e6e6e6;
+    font-weight: bold;
+}
+
+.sidebar {
+    width: 240px;
+    background: #e6e6e6;
+    border-right: none;
+    flex-shrink: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.menu {
+    flex: 1; /
+}
+
+.sidebar-logout {
+    padding: 15px;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 8px 0;
+    border: none;
+    border-radius: 8px;
+    background: #4dedffff;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
 </style>
 </head>
 
@@ -127,11 +176,26 @@ body {
                 <a href="Status_Aduan_User.php" class="active">Status Aduan</a>
                 <a href="Hantar_Aduan_User.php">Hantar Aduan</a>
             </div>
+
+            <div class="sidebar-logout">
+        <button class="logout-btn">Logout</button>
+    </div>
         </div>
 
         
         <div class="content">
-            
+             <table class="aduan-table">
+        <thead>
+            <tr>
+                <th>Bil</th>
+                <th>Tarikh dan Masa Aduan</th>
+                <th>Lokasi</th>
+                <th>Jenis Masalah</th>
+                <th>Nama Technician</th>
+                <th>Tarikh dan Masa Kemaskini</th>
+                <th>Status</th>
+            </tr>
+        </thead>
         </div>
 
     </div>
