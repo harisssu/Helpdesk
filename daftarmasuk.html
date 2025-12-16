@@ -1,0 +1,116 @@
+<html>
+    <head>
+        <title>E-ICT Aduan</title>
+        <style>
+             body {
+                font-family: 'Arial', sans-serif;
+                margin: 0;
+                height: 100vh;
+                background-image: url("background.jpg");
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                color: white; 
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .container {
+                width: 400px;
+                background: rgb(240, 237, 237);
+                padding: 2rem;
+                border-radius: 10px;
+                box-shadow: 0 8px 20px rgba(154, 76, 76, 0.1);
+            }
+
+            .title {
+                text-align: center;
+                font-size: 2.2rem;
+                font-weight: bold;
+                margin-bottom: 1.5rem;
+                color: #000000;
+            }
+
+            label {
+                width: 120px;
+                margin-right: 10px;
+                font-weight: 500;
+                color: #000000;
+            }
+
+            input {
+                flex: 1;      
+                padding: 0.2rem;
+                border: 0.8px solid #1d0e0e;
+                font-size: 0.9rem;
+                width: 500px;
+            }
+
+            .form-group {
+                display: flex;
+                align-items: center;
+                margin-bottom: 1rem;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="title">Daftar Masuk</div>
+            <div class="form-group">
+                <label for ="nama">Nama: </label>
+                <input type="text" id="nama" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="jawatan">Jawatan: </label>
+                <input type="text" id="jawatan" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="jabatan">Jabatan: </label>
+                <input type="text" id="jabatan" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="noIC">Nombor IC: </label>
+                <input type="text" id="noIC" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="noOffice">No Ofiice: </label>
+                <input type="text" id="noOffice" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="emel">Emel: </label>
+                <input type="text" id="emel" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="pass1">Kata Laluan: </label>
+                <input type="password" id="pass1" required />
+            </div>
+
+            <div class="form-group">
+                <label for ="pass">Sahkan Kata Laluan: </label>
+                <input type="password" id="pass" required />
+            </div>
+
+            <div class="form-group">
+                <label for="ketuaUnit">Adakah Anda Ketua Unit?</label>
+                <input type="radio" id="ketuaUnit" />
+            </div>
+
+            <center>
+                <button>
+                    <a href="login.html">Kembali</a>
+                </button>
+                <button type="submit">Daftar</button>
+            </center>
+
+
+        </div>
+    </body>
+</html>
