@@ -1,3 +1,7 @@
+<?php
+date_default_timezone_set("Asia/Kuala_Lumpur");
+?>
+
 <html>
     <head>
 <title>e-ICT Aduan</title>
@@ -10,7 +14,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #cbcbcb;
+    background-image: url("img/bg.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
     position: relative;
     overflow: hidden;
 }
@@ -19,7 +27,7 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #f2f2f2;
+    background: transparent;
 }
 
 .topbar {
@@ -97,7 +105,7 @@ body {
 .content {
     flex: 1;
     padding: 30px;
-    background: #f7f7f7;
+    background: transparent;
     overflow: auto;
 }
 
@@ -233,10 +241,10 @@ body {
         <label>Jenis Masalah :</label>
         <select name="jenis_masalah">
             <option value="">-- Pilih --</option>
-            <option value="monitor">Komputer</option>
+            <option value="Hardware">Hardware</option>
             <option value="Printer">Printer</option>
-            <option value="Software">Internet</option>
-            <option value="Network">Sistem</option>
+            <option value="Software">Software</option>
+            <option value="Network">Network</option>
             <option value="Lain-lain">Lain-lain</option>
         </select>
     </div>
