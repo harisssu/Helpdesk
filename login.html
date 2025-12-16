@@ -6,10 +6,15 @@
                 font-family: 'Arial', sans-serif;
                 margin: 0;
                 height: 100vh;
+                background-image: url("background.jpg");
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                color: white; 
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                background: #ffffff;
+
             }
 
             .container {
@@ -25,6 +30,7 @@
                 font-size: 2.2rem;
                 font-weight: bold;
                 margin-bottom: 1.5rem;
+                color: #000000;
             }
 
             .form-group {
@@ -43,7 +49,7 @@
             input {
                 flex: 1;      
                 padding: 0.2rem;
-                border: 2px solid #1d0e0e;
+                border: 0.8px solid #1d0e0e;
                 font-size: 0.9rem;
             }
 
@@ -63,7 +69,7 @@
                 display: flex;
                 justify-content: center;
                 gap: 70px; 
-                font-size: 1rem;
+                font-size: 0.9rem;
             }
 
         </style>
@@ -80,10 +86,12 @@
                 <label for ="pass">Kata Laluan: </label>
                 <input type="password" id="pass" required />
             </div>
-            <button type="submit" class="buttonlogin">Log Masuk</button>
+            <center>
+                <button type="submit">Log Masuk</button>
+            </center>
 
             <div class="link">
-                <a href="h.html">Daftar Masuk</a>
+                <a href="daftarmasuk.html">Daftar Masuk</a>
                 <a href="h.html">Lupa Kata Laluan?</a>
             </div>
         </div>
