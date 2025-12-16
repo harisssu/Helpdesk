@@ -10,7 +10,10 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #cbcbcb;
+    background-image: url("img/bg.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     position: relative;
     overflow: hidden;
 }
@@ -19,7 +22,7 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #f2f2f2;
+    background: transparent;
 }
 
 .topbar {
@@ -94,7 +97,7 @@ body {
 .content {
     flex: 1;
     padding: 30px;
-    background: #f7f7f7;
+    background:transparent;
     overflow: auto;
 }
 
@@ -181,6 +184,8 @@ body {
         <button class="logout-btn">Logout</button>
     </div>
         </div>
+
+        
 
         
         <div class="content">
