@@ -171,7 +171,7 @@ body {
                 <img src="img/profile.jpg" alt="User">
                 <div>
                     <strong>.....</strong><br>
-                    <small>User</small>
+                    <small>Admin</small>
                 </div>
             </div>
 
@@ -211,4 +211,5 @@ body {
 </div>
 
 </body>
+
 </html>
