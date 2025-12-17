@@ -6,7 +6,7 @@
                 font-family:Arial, Helvetica, sans-serif;
                 margin: 0;
                 height: 100vh;
-                background-image: url("background.jpg");
+                background-image: url("it6.jpg");
                 background-size: cover;
                 background-position: center;
                 background-repeat: no-repeat;
@@ -49,8 +49,27 @@
             .form-group {
                 display: flex;
                 align-items: center;
-                margin-bottom: 1.5rem;
+                margin-bottom: 0.5rem;
             }
+
+            .btn {
+                width: 50%;
+                background: #081c4b;
+                border-radius: 0px;
+                font-weight: bold;
+                color: white;
+                cursor: pointer;
+                display: block;
+                margin-top: 1rem;
+                border: 0.8px solid #1d0e0e;
+                font-size: 0.8rem;
+            }
+
+            .button-group {
+                display: flex;
+                gap: 40px;
+            }
+
         </style>
 
     </head>
@@ -62,12 +81,12 @@
                 <input type="text" id="emel" required />
             </div>
 
-            <center>
-                <button>
-                    <a href="login.html">Kembali</a>
-                </button>
-                <button type="submit">Hantar</button>
-            </center>
+            <div class="button-group">
+                <a href="login.html" class="btn" style="text-align:center; text-decoration:none; line-height:2;">
+                    Kembali
+                </a>
+                <button type="submit" class="btn">Hantar</button>
+            </div>
         </div>
         
     </body>
