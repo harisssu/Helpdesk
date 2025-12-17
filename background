@@ -12,10 +12,11 @@
                         rgb(1, 1, 1),
                         rgba(0, 0, 0, 0.282)
                     ),
-                    url("bg.jpg");
+                    url("background.jpg");
                 background-size: cover;
                 background-position: center;
                 background-repeat: no-repeat;
+                background-attachment: fixed;   /*make background fixed placed*/
                 color: white; 
             }
         </style>
