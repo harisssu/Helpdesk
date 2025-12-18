@@ -44,7 +44,7 @@ body {
 
 .topbar .page-title {
     font-weight: bold;
-    color: #000;
+    color: #ffffffff;
     margin-left:30px; 
     font-size: 25px;
 }
@@ -171,13 +171,13 @@ body {
                 <img src="img/profile.jpg" alt="User">
                 <div>
                     <strong>.....</strong><br>
-                    <small>Admin</small>
+                    <small>User</small>
                 </div>
             </div>
 
             <div class="menu">
                 <a href="dashboard_admin.php" class="active">Dashboard</a>
-                <a href="Senarai_Aduan_admin.php">Senarai Aduan</a>
+                <a href="Senarai_aduan_admin.php">Senarai Aduan</a>
                 <a href="Senarai_Pengguna_admin.php">Senarai Pengguna</a>
                 <a href="Laporan_statistik_admin.php">Laporan Statistik</a>
             </div>
@@ -211,5 +211,4 @@ body {
 </div>
 
 </body>
-
 </html>
