@@ -44,7 +44,7 @@ body {
 
 .topbar .page-title {
     font-weight: bold;
-    color: #000;
+    color: #ffffffff;
     margin-left:30px; 
     font-size: 25px;
 }
@@ -186,7 +186,7 @@ body {
 
             <div class="menu">
                 <a href="dashboard_admin.php">Dashboard</a>
-                <a href="Senarai_Aduan_admin.php">Senarai Aduan</a>
+                <a href="Senarai_aduan_admin.php">Senarai Aduan</a>
                 <a href="Senarai_Pengguna_admin.php">Senarai Pengguna</a>
                 <a href="Laporan_statistik_admin.php"class="active">Laporan Statistik</a>
             </div>
@@ -236,7 +236,7 @@ body {
     <p style="text-align:center; font-weight:bold;">
         barchart
     </p>
-</div>
+    </div>
 </div>
 </body>
 </html>
