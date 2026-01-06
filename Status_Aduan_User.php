@@ -2,25 +2,25 @@
 session_start();
 include "db_connect.php";
 
-
+/* Sekuriti */
 if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '00') {
     header("Location: login.html");
     exit;
 }
 
 $noIC = $_SESSION['noIC'];
-$idPeranan = $_SESSION['idPeranan']; 
+$idPeranan = $_SESSION['idPeranan']; // Contoh: '00', '01', dll
 $perananNama = "";
 $sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
 $resultPeranan = mysqli_query($conn, $sqlPeranan);
 
 if ($row = mysqli_fetch_assoc($resultPeranan)) {
-    $perananNama = $row['namaPeranan']; 
+    $perananNama = $row['namaPeranan']; // Contoh: 'Pengguna', 'Admin'
 } else {
     $perananNama = "Unknown";
 }
 
-
+// Query tanpa prepare
 $sql = "SELECT 
             a.tarikhAduan,
             a.masaAduan,
@@ -222,7 +222,8 @@ body {
 
             <div class="sidebar-logout">
                 <form action="logout.php" method="post">
-                    <button type="submit" class="logout-btn">Logout</button>
+                    <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+
                 </form>
             </div>
         </div>
@@ -254,8 +255,8 @@ body {
                             echo "<td>".date('d/m/Y', strtotime($row['tarikhAduan']))." ".$row['masaAduan']."</td>";
                             echo "<td>".htmlspecialchars($row['lokasi'])."</td>";
                             echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
-                            echo "<td>-</td>"; 
-                            echo "<td>-</td>"; 
+                            echo "<td>-</td>"; // kosongkan Technician
+                            echo "<td>-</td>"; // kosongkan Tarikh Kemaskini
                             echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
                             echo "</tr>";
                         }
@@ -271,6 +272,15 @@ body {
 
     </div>
 </div>
+
+
+<script>
+function confirmLogout() {
+    return confirm("Anda Pasti Untuk Log Keluar?");
+}
+</script>
+
+
 
 </body>
 </html>
