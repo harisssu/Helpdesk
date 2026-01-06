@@ -269,9 +269,9 @@ body {
                 <a href="Hantar_Aduan_User.php" class="active">Hantar Aduan</a>
             </div>
 
-            <div class="sidebar-logout">
+             <div class="sidebar-logout">
                 <form action="logout.php" method="post">
-                    <button type="submit" class="logout-btn">Logout</button>
+                    <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
                 </form>
             </div>
         </div>
@@ -338,6 +338,11 @@ document.getElementById("removeFile").addEventListener("click", function () {
 });
 </script>
 
+<script>
+function confirmLogout() {
+    return confirm("Anda Pasti Untuk Log Keluar?");
+}
+</script>
 
 </body>
 </html>
