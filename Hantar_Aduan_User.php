@@ -1,6 +1,77 @@
 <?php
+session_start();
 date_default_timezone_set("Asia/Kuala_Lumpur");
+include "db_connect.php";
+
+if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '00') {
+    header("Location: login.html");
+    exit;
+}
+
+$namaUser = $_SESSION['namaUser'];
+$noIC     = $_SESSION['noIC'];
+$idPeranan = $_SESSION['idPeranan'];
+$jabatan  = $_SESSION['jabatan'] ; 
+$idPeranan = $_SESSION['idPeranan']; // Contoh: '00', '01', dll
+
+
+$tarikhAduan = date("Y-m-d");
+$masaAduan   = date("H:i:s");
+$namaStatus = "Pending";
+$attachment = "";
+$msg = "";
+$perananNama = "";
+$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
+$resultPeranan = mysqli_query($conn, $sqlPeranan);
+
+if ($row = mysqli_fetch_assoc($resultPeranan)) {
+    $perananNama = $row['namaPeranan']; // Contoh: 'Pengguna', 'Admin'
+} else {
+    $perananNama = "Unknown";
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $lokasi = mysqli_real_escape_string($conn, $_POST['lokasi']);
+    $jenisMasalah = mysqli_real_escape_string($conn, $_POST['jenis_masalah']);
+    $penerangan = mysqli_real_escape_string($conn, $_POST['penerangan']);
+
+    // Handle optional file upload
+    if (!empty($_FILES['attachment']['name'])) {
+        $filename = basename($_FILES['attachment']['name']);
+        $target = "uploads/" . $filename;
+        if (move_uploaded_file($_FILES['attachment']['tmp_name'], $target)) {
+            $attachment = $filename;
+        }
+    }
+
+    $sql = "INSERT INTO aduan 
+        (namaUser, noIC, idPeranan, jabatan, lokasi, jenisMasalah, peneranganMasalah, idStatus, tarikhAduan, masaAduan, attachment)
+        VALUES (
+            '$namaUser',
+            '$noIC',
+            '$idPeranan',
+            '$jabatan',
+            '$lokasi',
+            '$jenisMasalah',
+            '$penerangan',
+             1,
+            '$tarikhAduan',
+            '$masaAduan',
+            '$attachment'
+        )";
+
+    if (mysqli_query($conn, $sql)) {
+        header("Location: Status_Aduan_User.php");
+        exit;
+    } else {
+        echo "Gagal hantar aduan: " . mysqli_error($conn);
+    }
+}
 ?>
+
+
+
 
 <html>
     <head>
@@ -178,23 +249,18 @@ body {
 <body>
 
 <div class="app">
-
-    
     <div class="topbar">
         <div class="system">e-ICT Aduan</div>
-        <div class="page-title">Hantar Aduan</div>
+        <div class="page-title">Status Aduan</div>
     </div>
 
-  
     <div class="layout">
-
-        
         <div class="sidebar">
             <div class="user-info">
                 <img src="img/profile.jpg" alt="User">
                 <div>
-                    <strong>.....</strong><br>
-                    <small>User</small>
+                    <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                    <small><?= htmlspecialchars($perananNama); ?></small>
                 </div>
             </div>
 
@@ -204,62 +270,60 @@ body {
             </div>
 
             <div class="sidebar-logout">
-        <button class="logout-btn">Logout</button>
-    </div>
+                <form action="logout.php" method="post">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
         </div>
 
-        
         <div class="content">
-             <form method="post" action="" enctype="multipart/form-data" class="aduan-form">
+            <div class="aduan-form">
+                <?php if ($msg != ""): ?>
+                    <div class="msg"><?= $msg; ?></div>
+                <?php endif; ?>
 
+                <form method="post" action="" enctype="multipart/form-data">
+                    <div class="form-row">
+                        <label>Nama:</label>
+                        <input type="text" value="<?= htmlspecialchars($namaUser); ?>" readonly>
 
-    <input type="hidden" name="user_id" value="1">
+                        <label>Bahagian / Unit:</label>
+                        <input type="text" value="<?= htmlspecialchars($jabatan); ?>" readonly>
+                    </div>
 
-    <div class="form-row">
-        <label>Nama :</label>
-        <input type="text" name="nama" value="....." readonly>
+                    <div class="form-row">
+                        <label>Lokasi:</label>
+                        <input type="text" name="lokasi" placeholder="Contoh: Unit Sumber Manusia">
+                    </div>
 
-        <label>Tarikh dan Masa :</label>
-        <input type="text" name="tarikh_masa"
-               value="<?php echo date('d/m/Y H:i'); ?>" readonly>
-    </div>
+                    <div class="form-row">
+                        <label>Jenis Masalah:</label>
+                        <select name="jenis_masalah">
+                            <option value="">-- Pilih --</option>
+                            <option value="Hardware">Hardware</option>
+                            <option value="Printer">Printer</option>
+                            <option value="Software">Software</option>
+                            <option value="Network">Network</option>
+                            <option value="Lain-lain">Lain-lain</option>
+                        </select>
+                    </div>
 
-    <div class="form-row">
-        <label>Bahagian / Unit :</label>
-        <input type="text" name="bahagian" value="IT" readonly>
+                    <div class="form-row">
+                        <label>Penerangan Masalah:</label>
+                        <textarea name="penerangan" rows="5" placeholder="Terangkan masalah anda di sini"></textarea>
+                    </div>
 
-        <label>Attachment (Pilihan) :</label>
-        <input type="file" name="attachment"> 
-    </div>
+                    <div class="form-row">
+                        <label>Attachment (Pilihan):</label>
+                        <input type="file" name="attachment">
+                    </div>
 
-    <div class="form-row">
-        <label>Lokasi :</label>
-        <input type="text" name="lokasi" placeholder="Contoh: Unit Sumber Manusia">
-    </div>
-
-    <div class="form-row">
-        <label>Jenis Masalah :</label>
-        <select name="jenis_masalah">
-            <option value="">-- Pilih --</option>
-            <option value="Hardware">Hardware</option>
-            <option value="Printer">Printer</option>
-            <option value="Software">Software</option>
-            <option value="Network">Network</option>
-            <option value="Lain-lain">Lain-lain</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label>Penerangan Masalah :</label>
-        <textarea name="penerangan" rows="5"
-                  placeholder="Terangkan masalah anda di sini"></textarea>
-    </div>
-
-    <div class="form-submit">
-        <button type="submit">Hantar</button>
-    </div>
+                    <div class="form-submit">
+                        <button type="submit">Hantar</button>
+                    </div>
+                </form>
+            </div>
         </div>
-
     </div>
 </div>
 
