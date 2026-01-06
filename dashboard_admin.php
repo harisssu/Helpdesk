@@ -1,4 +1,28 @@
-<html>
+  <?php
+session_start();
+include "db_connect.php";
+
+/*if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '01') {
+    header("Location: login.html");
+    exit;
+}*/
+
+  $sql = "SELECT 
+            a.idAduan,
+            a.namaUser,
+            a.jenisMasalah,
+            a.jabatan,
+            a.tarikhAduan,
+            s.namaStatus
+        FROM aduan a
+        JOIN status s ON a.idStatus = s.idStatus
+        ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
+
+$result = mysqli_query($conn, $sql);
+
+?>
+  
+  <html>
     <head>
 <title>e-ICT Aduan</title>
 
@@ -183,8 +207,8 @@ body {
             </div>
 
             <div class="sidebar-logout">
-        <button class="logout-btn">Logout</button>
-    </div>
+                 <button class="logout-btn">Logout</button>
+            </div>
         </div>
 
         
@@ -199,13 +223,35 @@ body {
                 <th>Nama Pengadu</th>
                 <th>Jenis Masalah</th>
                 <th>Unit</th>
-                <th>Keutamaan</th>
                 <th>Nama Technician</th>
                 <th>Tarikh Aduan</th>
                 <th>Status</th>
             </tr>
         </thead>
         </div>
+
+       <tbody>
+        <?php
+        $bil = 1;
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "<td>".$bil++."</td>";
+                echo "<td>SD" . str_pad($row['idAduan'], 5, "0", STR_PAD_LEFT) . "</td>";
+                echo "<td>".htmlspecialchars($row['namaUser'])."</td>";
+                echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
+                echo "<td>".htmlspecialchars($row['jabatan'])."</td>";
+                echo "<td>-</td>"; // Technician (belum assign)
+                echo "<td>".date('d/m/Y', strtotime($row['tarikhAduan']))."</td>";
+                echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
+                echo "</tr>";
+            }
+        } else {
+            echo "<tr><td colspan='9'>Tiada aduan direkodkan</td></tr>";
+        }
+        ?>
+        </tbody>
+        </table>
 
     </div>
 </div>
