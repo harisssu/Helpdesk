@@ -12,7 +12,7 @@ $namaUser = $_SESSION['namaUser'];
 $noIC     = $_SESSION['noIC'];
 $idPeranan = $_SESSION['idPeranan'];
 $jabatan  = $_SESSION['jabatan'] ; 
-$idPeranan = $_SESSION['idPeranan']; // Contoh: '00', '01', dll
+$idPeranan = $_SESSION['idPeranan']; 
 
 
 $tarikhAduan = date("Y-m-d");
@@ -25,7 +25,7 @@ $sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
 $resultPeranan = mysqli_query($conn, $sqlPeranan);
 
 if ($row = mysqli_fetch_assoc($resultPeranan)) {
-    $perananNama = $row['namaPeranan']; // Contoh: 'Pengguna', 'Admin'
+    $perananNama = $row['namaPeranan']; 
 } else {
     $perananNama = "Unknown";
 }
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $jenisMasalah = mysqli_real_escape_string($conn, $_POST['jenis_masalah']);
     $penerangan = mysqli_real_escape_string($conn, $_POST['penerangan']);
 
-    // Handle optional file upload
+   
     if (!empty($_FILES['attachment']['name'])) {
         $filename = basename($_FILES['attachment']['name']);
         $target = "uploads/" . $filename;
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             '$lokasi',
             '$jenisMasalah',
             '$penerangan',
-             1,
+             1,                 
             '$tarikhAduan',
             '$masaAduan',
             '$attachment'
@@ -330,3 +330,4 @@ body {
 </body>
 </html>
  
+
