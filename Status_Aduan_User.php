@@ -1,3 +1,42 @@
+<?php
+session_start();
+include "db_connect.php";
+
+
+if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '00') {
+    header("Location: login.html");
+    exit;
+}
+
+$noIC = $_SESSION['noIC'];
+$idPeranan = $_SESSION['idPeranan']; 
+$perananNama = "";
+$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
+$resultPeranan = mysqli_query($conn, $sqlPeranan);
+
+if ($row = mysqli_fetch_assoc($resultPeranan)) {
+    $perananNama = $row['namaPeranan']; 
+} else {
+    $perananNama = "Unknown";
+}
+
+
+$sql = "SELECT 
+            a.tarikhAduan,
+            a.masaAduan,
+            a.lokasi,
+            a.jenisMasalah,
+            a.peneranganMasalah,
+            s.namaStatus
+        FROM aduan a
+        JOIN status s ON a.idStatus = s.idStatus
+        WHERE a.noIC = '$noIC'
+        ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
+
+$result = mysqli_query($conn, $sql);
+?>
+
+
 <html>
     <head>
 <title>e-ICT Aduan</title>
@@ -170,8 +209,9 @@ body {
             <div class="user-info">
                 <img src="img/profile.jpg" alt="User">
                 <div>
-                    <strong>.....</strong><br>
-                    <small>User</small>
+                   <strong><?= $_SESSION['namaUser']; ?></strong><br>
+                   <small><?= htmlspecialchars($perananNama); ?></small>
+
                 </div>
             </div>
 
@@ -181,8 +221,10 @@ body {
             </div>
 
             <div class="sidebar-logout">
-        <button class="logout-btn">Logout</button>
-    </div>
+                <form action="logout.php" method="post">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
         </div>
 
         
@@ -190,17 +232,41 @@ body {
         
         <div class="content">
              <table class="aduan-table">
-        <thead>
-            <tr>
-                <th>Bil</th>
-                <th>Tarikh dan Masa Aduan</th>
-                <th>Lokasi</th>
-                <th>Jenis Masalah</th>
-                <th>Nama Technician</th>
-                <th>Tarikh dan Masa Kemaskini</th>
-                <th>Status</th>
-            </tr>
-        </thead>
+    <thead>
+        <tr>
+            <th>Bil</th>
+            <th>Tarikh dan Masa Aduan</th>
+            <th>Lokasi</th>
+            <th>Jenis Masalah</th>
+            <th>Nama Technician</th>
+            <th>Tarikh dan Masa Kemaskini</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+       <?php
+                    $bil = 1;
+                    if (mysqli_num_rows($result) > 0) {
+                        while ($row = mysqli_fetch_assoc($result)) {
+                            echo "<tr>";
+                            echo "<td>".$bil++."</td>";
+                            echo "<td>".date('d/m/Y', strtotime($row['tarikhAduan']))." ".$row['masaAduan']."</td>";
+                            echo "<td>".htmlspecialchars($row['lokasi'])."</td>";
+                            echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
+                            echo "<td>-</td>"; 
+                            echo "<td>-</td>"; 
+                            echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
+                            echo "</tr>";
+                        }
+                    } else {
+                        echo "<tr><td colspan='7'>Tiada aduan direkodkan</td></tr>";
+                    }
+                    ?> 
+
+    </tbody>
+</table>
+
         </div>
 
     </div>
