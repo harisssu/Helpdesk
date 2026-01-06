@@ -251,7 +251,7 @@ body {
 <div class="app">
     <div class="topbar">
         <div class="system">e-ICT Aduan</div>
-        <div class="page-title">Status Aduan</div>
+        <div class="page-title">Hantar Aduan</div>
     </div>
 
     <div class="layout">
