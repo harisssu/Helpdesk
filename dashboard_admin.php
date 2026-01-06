@@ -1,4 +1,4 @@
-  <?php
+<?php
 session_start();
 include "db_connect.php";
 
@@ -22,7 +22,7 @@ $result = mysqli_query($conn, $sql);
 
 ?>
   
-  <html>
+<html>
     <head>
 <title>e-ICT Aduan</title>
 
