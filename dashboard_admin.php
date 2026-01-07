@@ -1,11 +1,26 @@
-<?php
+  <?php
 session_start();
 include "db_connect.php";
 
-/*if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '01') {
+if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '01') {
     header("Location: login.html");
     exit;
-}*/
+}
+
+$namaUser = $_SESSION['namaUser'];
+$noIC     = $_SESSION['noIC'];
+$idPeranan = $_SESSION['idPeranan'];
+$jabatan  = $_SESSION['jabatan'] ;
+$perananNama = "";
+$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
+$resultPeranan = mysqli_query($conn, $sqlPeranan);
+
+if ($row = mysqli_fetch_assoc($resultPeranan)) {
+    $perananNama = $row['namaPeranan']; 
+} else {
+    $perananNama = "Unknown";
+}
+
 
   $sql = "SELECT 
             a.idAduan,
@@ -194,8 +209,8 @@ body {
             <div class="user-info">
                 <img src="img/profile.jpg" alt="User">
                 <div>
-                    <strong>.....</strong><br>
-                    <small>User</small>
+                    <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                    <small><?= htmlspecialchars($perananNama); ?></small>
                 </div>
             </div>
 
