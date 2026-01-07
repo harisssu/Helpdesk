@@ -221,8 +221,10 @@ body {
                 <a href="Laporan_statistik_admin.php">Laporan Statistik</a>
             </div>
 
-            <div class="sidebar-logout">
-                 <button class="logout-btn">Logout</button>
+           <div class="sidebar-logout">
+                <form action="logout.php" method="post">
+                    <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+                </form>
             </div>
         </div>
 
@@ -270,6 +272,14 @@ body {
 
     </div>
 </div>
+
+<script>
+function confirmLogout() {
+    return confirm("Anda Pasti Untuk Log Keluar?");
+}
+</script>
+
+
 
 </body>
 </html>
