@@ -396,7 +396,7 @@ if (!$result) {
                                                 <td>{$row['namaUser']}</td>
                                                 <td>{$row['jenisMasalah']}</td>
                                                 <td>{$row['namaJabatan']}</td>
-                                                <td>-</td>
+                                                <td>{$row['namaUser']}</td>
                                                 <td>{$row['tarikhAduan']}</td>
                                                 <td>{$status}</td>
                                             </tr>";
