@@ -1,3 +1,56 @@
+<?php
+session_start();
+include "db_connect.php";
+
+if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '01') {
+    header("Location: login.html");
+    exit;
+}
+
+$namaUser = $_SESSION['namaUser'];
+$noIC     = $_SESSION['noIC'];
+$idPeranan = $_SESSION['idPeranan'];
+$idJabatan = $_SESSION['idJabatan'];
+$perananNama = "";
+$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
+$resultPeranan = mysqli_query($conn, $sqlPeranan);
+
+if ($row = mysqli_fetch_assoc($resultPeranan)) {
+    $perananNama = $row['namaPeranan']; 
+} else {
+    $perananNama = "Unknown";
+}
+
+$jabatanNama = "";
+$sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
+$resultJabatan = mysqli_query($conn, $sqlJabatan);
+
+if ($row = mysqli_fetch_assoc($resultJabatan)) {
+    $jabatanNama = $row['namaJabatan'];
+} else {
+    $jabatanNama = "Unknown";
+}
+
+$sql = "SELECT 
+            a.idAduan,
+            u.namaUser,
+            j.namaJabatan,
+            a.jenisMasalah,
+            a.tarikhAduan,
+            s.namaStatus,
+            a.idStatus
+        FROM aduan a
+        LEFT JOIN user u ON a.noIC = u.noIC
+        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+        LEFT JOIN status s ON a.idStatus = s.idStatus
+        ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
+
+$result = mysqli_query($conn, $sql);
+if (!$result) {
+    die("SQL Error: " . mysqli_error($conn));
+}
+
+?>
 <html>
     <head>
         <title>E-ICT Aduan</title>
@@ -47,7 +100,7 @@
 
             .topbar .page-title {
                 font-weight: bold;
-                color: #000;
+                color: #ffffffff;
                 margin-left:30px; 
                 font-size: 25px;
             }
@@ -203,21 +256,23 @@
                     <div class="user-info">
                         <img src="profile.jpg" alt="User">
                         <div>
-                            <strong>.....</strong><br>
-                            <small>Admin</small>
+                            <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                            <small><?= htmlspecialchars($perananNama); ?></small>
                         </div>
                     </div>
 
                     <div class="menu">
-                        <a href="dashboard_admin.php">Dashboard</a>
-                        <a href="Senarai_Aduan_admin.php" class="active">Senarai Aduan</a>
+                        <a href="dashboard_admin.php" >Dashboard</a>
+                        <a href="Senarai_aduan_admin.php" class="active">Senarai Aduan</a>
                         <a href="Senarai_Pengguna_admin.php">Senarai Pengguna</a>
                         <a href="Laporan_statistik_admin.php">Laporan Statistik</a>
                     </div>
 
-                    <div class="sidebar-logout">
-                <button class="logout-btn">Logout</button>
-            </div>
+                <div class="sidebar-logout">
+                        <form action="logout.php" method="post">
+                            <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="content">
@@ -304,22 +359,57 @@
                                     <option>Hantar Kedai</option>
                                 </select>
                             <button>Cari</button>
+
                     </div>
-                    <table class="aduan-table">
-                    <thead>
-                        <tr>
-                            <th>Bil</th>
-                            <th>Id Aduan</th>
-                            <th>Nama Pengadu</th>
-                            <th>Jenis Masalah</th>
-                            <th>Unit</th>
-                            <th>Keutamaan</th>
-                            <th>Nama Technician</th>
-                            <th>Tarikh Aduan</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                </div>
+                        <table class="aduan-table">
+                            <thead>
+                                <tr>
+                                    <th>Bil</th>
+                                    <th>Id Aduan</th>
+                                    <th>Nama Pengadu</th>
+                                    <th>Jenis Masalah</th>
+                                    <th>Unit</th>
+                                    <th>Nama Technician</th>
+                                    <th>Tarikh Aduan</th>
+                                    <th>Status</th>
+                                    <th>Tindakan</th>
+                                </tr>
+                            </thead> 
+                            <tbody>
+                                <?php
+                                $bil = 1;
+
+                                if ($result->num_rows > 0) {
+                                    while ($row = $result->fetch_assoc()) {
+
+                                        switch ($row['idStatus']) {
+                                            case 1: $status = "Baru"; break;
+                                            case 2: $status = "Dalam Tindakan"; break;
+                                            case 3: $status = "Selesai"; break;
+                                            case 4: $status = "Hantar Kedai"; break;
+                                            default: $status = "Tidak Diketahui";
+                                        }
+
+                                        echo "<tr>
+                                                <td>{$bil}</td>
+                                                <td>{$row['idAduan']}</td>
+                                                <td>{$row['namaUser']}</td>
+                                                <td>{$row['jenisMasalah']}</td>
+                                                <td>{$row['namaJabatan']}</td>
+                                                <td>-</td>
+                                                <td>{$row['tarikhAduan']}</td>
+                                                <td>{$status}</td>
+                                            </tr>";
+
+                                        $bil++;
+                                    }
+                                } else {
+                                    echo "<tr><td colspan='7'>Tiada rekod aduan</td></tr>";
+                                }
+                                ?>
+                                </tbody>
+                            </table>
+                    </div>
             </div>
         </div>
 
@@ -327,12 +417,16 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
         <script>
-        $(document).ready(function () {
-            $('#jenis_masalah').select2({
-                placeholder: "-- Pilih --",
-                allowClear: true
+            $(document).ready(function () {
+                $('#jenis_masalah').select2({
+                    placeholder: "-- Pilih --",
+                    allowClear: true
+                });
             });
-        });
+            
+            function confirmLogout() {
+                return confirm("Anda Pasti Untuk Log Keluar?");
+            }
         </script>
 
     </body>
