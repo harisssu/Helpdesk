@@ -236,7 +236,7 @@
                     <option value="SOPD">SOPD</option>
                     <option value="Unit Fisioterapi">Unit Fisioterapi</option>
                     <option value="Unit Hal Ehwal Islam">Unit Hal Ehwal Islam</option>
-                    <option value="Unit IT">Unit IT</option>
+                    <option value="Unit Teknologi Maklumat">Unit Teknologi Maklumat</option>
                     <option value="Unit Kejuruteraan">Unit Kejuruteraan</option>
                     <option value="Unit Kerja Sosial">Unit Kerja Sosial</option>
                     <option value="Unit Keselamatan">Unit Keselamatan</option>
