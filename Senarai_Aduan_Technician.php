@@ -47,7 +47,7 @@
 
             .topbar .page-title {   /*Senarai Aduan*/
             font-weight: bold;
-            color: #000;
+            color: #ffffffff;
             margin-left:30px; 
             font-size: 25px;
             }
