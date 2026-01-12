@@ -10,7 +10,7 @@ if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '01') {
 $namaUser = $_SESSION['namaUser'];
 $noIC     = $_SESSION['noIC'];
 $idPeranan = $_SESSION['idPeranan'];
-$jabatan  = $_SESSION['jabatan'] ;
+$idJabatan = $_SESSION['idJabatan'];
 $perananNama = "";
 $sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
 $resultPeranan = mysqli_query($conn, $sqlPeranan);
@@ -21,19 +21,33 @@ if ($row = mysqli_fetch_assoc($resultPeranan)) {
     $perananNama = "Unknown";
 }
 
+$jabatanNama = "";
+$sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
+$resultJabatan = mysqli_query($conn, $sqlJabatan);
 
-  $sql = "SELECT 
+if ($row = mysqli_fetch_assoc($resultJabatan)) {
+    $jabatanNama = $row['namaJabatan'];
+} else {
+    $jabatanNama = "Unknown";
+}
+
+$sql = "SELECT 
             a.idAduan,
-            a.namaUser,
+            u.namaUser,
+            j.namaJabatan,
             a.jenisMasalah,
-            a.jabatan,
             a.tarikhAduan,
             s.namaStatus
         FROM aduan a
-        JOIN status s ON a.idStatus = s.idStatus
+        LEFT JOIN user u ON a.noIC = u.noIC
+        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+        LEFT JOIN status s ON a.idStatus = s.idStatus
         ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
 
 $result = mysqli_query($conn, $sql);
+if (!$result) {
+    die("SQL Error: " . mysqli_error($conn));
+}
 
 ?>
   
@@ -49,7 +63,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: url("img/bg.jpg");
+    background-image: url("background.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -207,7 +221,7 @@ body {
         
         <div class="sidebar">
             <div class="user-info">
-                <img src="img/profile.jpg" alt="User">
+                <img src="profile.jpg" alt="User">
                 <div>
                     <strong><?= htmlspecialchars($namaUser); ?></strong><br>
                     <small><?= htmlspecialchars($perananNama); ?></small>
@@ -232,19 +246,19 @@ body {
 
         
         <div class="content">
-             <table class="aduan-table">
-        <thead>
-            <tr>
-                <th>Bil</th>
-                <th>Id Aduan</th>
-                <th>Nama Pengadu</th>
-                <th>Jenis Masalah</th>
-                <th>Unit</th>
-                <th>Nama Technician</th>
-                <th>Tarikh Aduan</th>
-                <th>Status</th>
-            </tr>
-        </thead>
+                <table class="aduan-table">
+            <thead>
+                <tr>
+                    <th>Bil</th>
+                    <th>Id Aduan</th>
+                    <th>Nama Pengadu</th>
+                    <th>Jenis Masalah</th>
+                    <th>Unit</th>
+                    <th>Nama Technician</th>
+                    <th>Tarikh Aduan</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
         </div>
 
        <tbody>
@@ -254,11 +268,11 @@ body {
             while ($row = mysqli_fetch_assoc($result)) {
                 echo "<tr>";
                 echo "<td>".$bil++."</td>";
-                echo "<td>SD" . str_pad($row['idAduan'], 5, "0", STR_PAD_LEFT) . "</td>";
+                echo "<td>".htmlspecialchars($row['idAduan']) . "</td>";
                 echo "<td>".htmlspecialchars($row['namaUser'])."</td>";
                 echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
-                echo "<td>".htmlspecialchars($row['jabatan'])."</td>";
-                echo "<td>-</td>"; // Technician (belum assign)
+                echo "<td>".htmlspecialchars($row['namaJabatan'])."</td>";
+                echo "<td>-</td>";
                 echo "<td>".date('d/m/Y', strtotime($row['tarikhAduan']))."</td>";
                 echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
                 echo "</tr>";
