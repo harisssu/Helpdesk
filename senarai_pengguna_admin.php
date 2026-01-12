@@ -1,3 +1,56 @@
+<?php
+session_start();
+include "db_connect.php";
+
+if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '01') {
+    header("Location: login.html");
+    exit;
+}
+
+$namaUser = $_SESSION['namaUser'];
+$noIC     = $_SESSION['noIC'];
+$idPeranan = $_SESSION['idPeranan'];
+$idJabatan = $_SESSION['idJabatan'];
+
+// Fetch current user's peranan
+$perananNama = "";
+$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
+$resultPeranan = mysqli_query($conn, $sqlPeranan);
+if ($row = mysqli_fetch_assoc($resultPeranan)) {
+    $perananNama = $row['namaPeranan']; 
+} else {
+    $perananNama = "Unknown";
+}
+
+// Fetch current user's jabatan
+$jabatanNama = "";
+$sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
+$resultJabatan = mysqli_query($conn, $sqlJabatan);
+if ($row = mysqli_fetch_assoc($resultJabatan)) {
+    $jabatanNama = $row['namaJabatan'];
+} else {
+    $jabatanNama = "Unknown";
+}
+
+// SQL to fetch all users along with their jabatan and peranan
+$sql = "SELECT 
+            u.noIC,
+            u.namaUser,
+            u.emel,
+            j.namaJabatan,
+            p.namaPeranan
+        FROM user u
+        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+        LEFT JOIN peranan p ON u.idPeranan = p.idPeranan
+        ORDER BY u.namaUser ASC";
+
+$result = mysqli_query($conn, $sql);
+if (!$result) {
+    die("SQL Error: " . mysqli_error($conn));
+}
+?>
+
+
 <html>
     <head>
         <title>E-ICT Aduan</title>
@@ -203,8 +256,8 @@
                     <div class="user-info">
                         <img src="profile.jpg" alt="User">
                         <div>
-                            <strong>.....</strong><br>
-                            <small>Admin</small>
+                            <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                            <small><?= htmlspecialchars($perananNama); ?></small>
                         </div>
                     </div>
 
@@ -216,8 +269,11 @@
                     </div>
 
                     <div class="sidebar-logout">
-                <button class="logout-btn">Logout</button>
-            </div>
+                        <form action="logout.php" method="post">
+                            <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+
+                        </form>
+                    </div>
                 </div>
 
                 <div class="content">
@@ -235,17 +291,76 @@
                             <input type="text" placeholder="Search..">
                             <button>Cari</button>
                     </div>
+
                     <table class="aduan-table">
                     <thead>
                         <tr>
                             <th>Bil</th>
                             <th>Nama Pengadu</th>
+                            <th>Jabatan</th>
                             <th>Emel Pengadu</th>
                             <th>Peranan</th>
                             <th>Tindakan</th>
                         </tr>
                     </thead>
+
+                    <tbody>
+                        <?php
+                        $bil = 1;
+                        if (mysqli_num_rows($result) > 0) {
+                            while ($row = mysqli_fetch_assoc($result)) {
+                                echo "<tr>";
+                                echo "<td>".$bil++."</td>";
+                                echo "<td>".htmlspecialchars($row['namaUser'])."</td>";
+                                echo "<td>".htmlspecialchars($row['namaJabatan'])."</td>";
+                                echo "<td>".htmlspecialchars($row['emel'])."</td>";
+                                echo "<td>".htmlspecialchars($row['namaPeranan'])."</td>";
+                                echo "<td><button class='lihat-btn' data-noic='".$row['noIC']."'>Lihat</button></td>";
+                                echo "</tr>";
+                            }
+                        } else {
+                            echo "<tr><td colspan='9'>Tiada aduan direkodkan</td></tr>";
+                        }
+                        ?>
+                        </tbody>
                 </div>
+            </div>
+        </div>
+
+        <div id="editUserModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+            <div style="background:#fff; padding:20px; border-radius:8px; width:400px; position:relative;">
+                <h3>Edit User</h3>
+                <form id="editUserForm">
+                    <label>No IC:</label>
+                    <input type="text" name="noIC" id="modalNoIC"><br><br>
+                    <label>Nama:</label>
+                    <input type="text" name="namaUser" id="modalNamaUser"><br><br>
+                    <label>Kata Laluan:</label>
+                    <input type="text" name="kataLaluan" id="modalKatalaluan"><br><br>
+                    <label>Jabatan:</label>
+                    <select name="idJabatan" id="modalJabatan">
+                        <?php
+                        $jabatanRes = mysqli_query($conn, "SELECT * FROM jabatan");
+                        while($jab = mysqli_fetch_assoc($jabatanRes)){
+                            echo "<option value='".$jab['idJabatan']."'>".$jab['namaJabatan']."</option>";
+                        }
+                        ?>
+                    </select><br><br>
+                    <label>Emel:</label>
+                    <input type="email" name="emel" id="modalEmel"><br><br>
+                    <label>Peranan:</label>
+                    <select name="idPeranan" id="modalPeranan">
+                        <?php
+                        $perananRes = mysqli_query($conn, "SELECT * FROM peranan");
+                        while($per = mysqli_fetch_assoc($perananRes)){
+                            echo "<option value='".$per['idPeranan']."'>".$per['namaPeranan']."</option>";
+                        }
+                        ?>
+                    </select><br><br>
+                    <button type="submit">Simpan</button>
+                    <button type="button" onclick="closeModal()">Tutup</button>
+                </form>
             </div>
         </div>
 
@@ -253,12 +368,53 @@
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
         <script>
-        $(document).ready(function () {
-            $('#jenis_masalah').select2({
-                placeholder: "-- Pilih --",
-                allowClear: true
+            $(document).ready(function () {
+                $('#jenis_masalah').select2({
+                    placeholder: "-- Pilih --",
+                    allowClear: true
+                });
             });
-        });
+
+            function confirmLogout() {
+                return confirm("Anda Pasti Untuk Log Keluar?");
+            }
+
+            function closeModal(){
+                $('#editUserModal').hide();
+            }
+
+            $('.lihat-btn').on('click', function(){
+                var noIC = $(this).data('noic');
+            
+                $.ajax({
+                    url: 'fetch_user.php',
+                    type: 'POST',
+                    data: { noIC: noIC },
+                    dataType: 'json',
+                    success: function(data){
+                        $('#modalNoIC').val(data.noIC);
+                        $('#modalNamaUser').val(data.namaUser);
+                        $('#modalEmel').val(data.emel);
+                        $('#modalJabatan').val(data.idJabatan);
+                        $('#modalPeranan').val(data.idPeranan);
+                        $('#modalKatalaluan').val(data.kataLaluan);
+                        $('#editUserModal').css('display', 'flex');
+                    }
+                });
+            });
+
+            $('#editUserForm').on('submit', function(e){
+                e.preventDefault();
+                $.ajax({
+                    url: 'update_user.php',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response){
+                        alert(response);
+                        location.reload();
+                    }
+                });
+            });
         </script>
 
     </body>
