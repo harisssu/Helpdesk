@@ -2,39 +2,31 @@
 session_start();
 include "db_connect.php";
 
-/* Sekuriti */
-if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '00') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'user') {
     header("Location: login.html");
     exit;
 }
 
 $noIC = $_SESSION['noIC'];
-$idPeranan = $_SESSION['idPeranan']; // Contoh: '00', '01', dll
-$perananNama = "";
-$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
-$resultPeranan = mysqli_query($conn, $sqlPeranan);
+$perananNama = "Pengguna"; 
 
-if ($row = mysqli_fetch_assoc($resultPeranan)) {
-    $perananNama = $row['namaPeranan']; // Contoh: 'Pengguna', 'Admin'
-} else {
-    $perananNama = "Unknown";
-}
-
-// Query tanpa prepare
 $sql = "SELECT 
             a.tarikhAduan,
             a.masaAduan,
             a.lokasi,
             a.jenisMasalah,
-            a.peneranganMasalah,
             s.namaStatus
         FROM aduan a
         JOIN status s ON a.idStatus = s.idStatus
-        WHERE a.noIC = '$noIC'
+        WHERE a.noIC = ?
         ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
 
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $noIC);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
+
 
 
 <html>
@@ -49,7 +41,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: url("img/bg.jpg");
+    background-image: url("background.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -207,9 +199,9 @@ body {
         
         <div class="sidebar">
             <div class="user-info">
-                <img src="img/profile.jpg" alt="User">
+                <img src="profile.jpg" alt="User">
                 <div>
-                   <strong><?= $_SESSION['namaUser']; ?></strong><br>
+                   <strong><?= htmlspecialchars($_SESSION['nama']); ?></strong> 
                    <small><?= htmlspecialchars($perananNama); ?></small>
 
                 </div>
