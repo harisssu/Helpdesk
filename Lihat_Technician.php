@@ -52,7 +52,7 @@ $aduanId = $_GET['id'] ?? 'Unknown'; // get the ID from URL
 
         .topbar .page-title {
             font-weight: bold;
-            color: #000;
+            color: #ffffffff;
             margin-left: 30px;
             font-size: 25px;
         }
