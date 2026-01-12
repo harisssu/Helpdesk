@@ -210,8 +210,8 @@
 
             <div class="form-group">
                 <label>Adakah Anda Ketua Unit?</label>
-                <input type="radio" name="isAdmin" value="yes" required> Ya
-                <input type="radio" name="isAdmin" value="no"> Tidak
+                <input type="radio" name="isKetua" value="yes" required> Ya
+                <input type="radio" name="isKetua" value="no"> Tidak
             </div>
 
             <div class="button-group">
@@ -251,7 +251,7 @@
                 return;
             }
 
-            const isAdmin = document.querySelector('input[name="isAdmin"]:checked').value;
+            const isKetua = document.querySelector('input[name="isKetua"]:checked').value;
 
             const user = {
                 noIC: document.getElementById('noIC').value,
@@ -261,8 +261,9 @@
                 noOffice: document.getElementById('noOffice').value,
                 emel: document.getElementById('emel').value,
                 kataLaluan: document.getElementById('kataLaluan').value,
-                isAdmin: isAdmin
+                isKetua: isKetua
             };
+
 
             try {
                 const response = await fetch('daftar1.php', {
