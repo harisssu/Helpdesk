@@ -27,9 +27,9 @@ if (empty($data['noIC']) || empty($data['kataLaluan'])) {
 $noIC = trim($data['noIC']);
 $password = $data['kataLaluan'];
 
-$sql = "SELECT noIC, namaUser, kataLaluan, idPeranan, jabatan 
-        FROM user 
-        WHERE noIC = ? 
+$sql = "SELECT noIC, namaUser, kataLaluan, idPeranan, idJabatan
+        FROM user
+        WHERE noIC = ?
         LIMIT 1";
 
 $stmt = $conn->prepare($sql);
@@ -59,9 +59,7 @@ if ($password !== $user['kataLaluan']) {
 $_SESSION['noIC'] = $user['noIC'];
 $_SESSION['namaUser'] = $user['namaUser'];
 $_SESSION['idPeranan'] = $user['idPeranan'];
-$_SESSION['jabatan'] = $user['jabatan'];
-
-$redirect = "";
+$_SESSION['idJabatan'] = $user['idJabatan'];
 
 switch ($user['idPeranan']) {
     case '00':
@@ -72,7 +70,7 @@ switch ($user['idPeranan']) {
         $redirect = "dashboard_admin.php";
         break;
 
-    case '02': 
+    case '02':
         $redirect = "senarai_aduan_technician.php";
         break;
 
@@ -91,4 +89,3 @@ echo json_encode([
 
 $stmt->close();
 $conn->close();
-
