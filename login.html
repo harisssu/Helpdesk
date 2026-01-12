@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>E-ICT Aduan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            height: 100vh;
+            background-image: url("it6.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 400px;
+            background: rgb(233, 229, 229);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgb(18, 16, 16);
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #000000;
+        }
+
+        .desc {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 300;
+            margin-bottom: 1.5rem;
+            color: #000000;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            width: 120px;
+            margin-right: 10px;
+            font-weight: 500;
+            color: #000000;
+        }
+
+        input {
+            flex: 1;
+            padding: 0.2rem 0.5rem;
+            border: 0.8px solid #1d0e0e;
+            font-size: 0.9rem;
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 60%;
+        }
+
+        .password-wrapper input {
+            width: 96%;
+            padding-right: 30px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            left: 240px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #555;
+            font-size: 1rem;
+            user-select: none;
+        }
+
+        .buttonlogin {
+            width: 100%;
+            padding: 0.4rem;
+            background: #081c4b;
+            border-radius: 0px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            display: block;
+            margin: 1rem auto;
+            border: 0.8px solid #1d0e0e;
+        }
+
+        .link {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 70px;
+            font-size: 0.9rem;
+        }
+
+        .link .text {
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: #000000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="title">E-ICT Aduan</div>
+        <div class="desc">Log Masuk ke Akaun</div>
+
+        <div class="form-group">
+            <label for="noIC">User ID:</label>
+            <input type="text" id="noIC" placeholder="No IC" required />
+        </div>
+
+        <div class="form-group">
+            <label for="pass">Kata Laluan:</label>
+            <div class="password-wrapper">
+                <input type="password" id="pass" required />
+                <i class="fa-solid fa-eye toggle-password" onclick="togglePassword()"></i>
+            </div>
+        </div>
+
+        <button type="submit" class="buttonlogin">Log Masuk</button>
+
+        <div class="link">
+            <a href="daftar1.html" class="text">Daftar Masuk</a>
+            <a href="lupakatalaluan.html" class="text">Lupa Kata Laluan</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passInput = document.getElementById("pass");
+            const icon = document.querySelector(".toggle-password");
+
+            if (passInput.type === "password") {
+                passInput.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                passInput.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+
+        document.querySelector('.buttonlogin').addEventListener('click', async function () {
+            const noIC = document.getElementById('noIC').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+
+            if (!noIC || !pass) {
+                alert("Sila masukkan No IC dan Kata Laluan");
+                return;
+            }
+
+            try {
+                const response = await fetch('login.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ noIC, kataLaluan: pass })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    window.location.href = result.redirect;
+                } else {
+                    alert(result.error || "Login gagal");
+                }
+
+            } catch (error) {
+                alert("Ralat sistem. Cuba lagi.");
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
