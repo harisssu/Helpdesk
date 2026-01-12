@@ -3,6 +3,7 @@
         <title>E-ICT Aduan</title>
 
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
         <style>
              body {
@@ -73,6 +74,28 @@
                 display: flex;
                 gap: 40px;
             }
+
+            .password-wrapper {
+                position: relative;
+                width: 70%;
+            }
+
+            .password-wrapper input {
+                width: 105%;
+                padding-right: 30px;
+            }
+
+            .toggle-password {
+                position: absolute;
+                top: 50%;
+                right: 5px;
+                transform: translateY(-50%);
+                cursor: pointer;
+                color: #555;
+                font-size: 1rem;
+                user-select: none;
+            }
+
         </style>
     </head>
     <body>
@@ -89,74 +112,73 @@
                 <input type="text" id="jawatan" required />
             </div>
 
-            <div class="form-group">
+             <div class="form-group">
                 <label>Jabatan:</label>
                 <select name="jabatan" id="jabatan" style="width: 30rem; padding: 0.2rem;" required>
                     <option value="">-- Pilih --</option>
-                    <option value="Bedah Mulut">Bedah Mulut</option>
-                    <option value="Bilik PA Pengarah">Bilik PA Pengarah</option>
-                    <option value="CSSU">CSSU</option>
-                    <option value="Daycare">Daycare</option>
-                    <option value="Dewan Bedah">Dewan Bedah</option>
-                    <option value="Dewan Bersalin">Dewan Bersalin</option>
-                    <option value="ENT">ENT</option>
-                    <option value="Farmasi Bekalan Wad">Farmasi Bekalan Wad</option>
-                    <option value="Farmasi DICE">Farmasi DICE</option>
-                    <option value="Farmasi Klinik Pakar">Farmasi Klinik Pakar</option>
-                    <option value="Farmasi Logistik">Farmasi Logistik</option>
-                    <option value="Farmasi Pengeluaran">Farmasi Pengeluaran</option>
-                    <option value="Farmasi Wad">Farmasi Wad</option>
-                    <option value="Forensik">Forensik</option>
-                    <option value="Hemodialisis">Hemodialisis</option>
-                    <option value="ICU">ICU</option>
-                    <option value="Jabatan Dietetik dan Sajian">Jabatan Dietetik dan Sajian</option>
-                    <option value="Jabatan Pergigian Pediatrik">Jabatan Pergigian Pediatrik</option>
-                    <option value="Kawalan Infeksi">Kawalan Infeksi</option>
-                    <option value="Kecemasan">Kecemasan</option>
-                    <option value="Klinik Pakar Obstetrik">Klinik Pakar Obstetrik</option>
-                    <option value="Klinik Pakar Ortopedik">Klinik Pakar Ortopedik</option>
-                    <option value="Klinik Pakar Pediatrik">Klinik Pakar Pediatrik</option>
-                    <option value="Klinik Pakar Psikiatri">Klinik Pakar Psikiatri</option>
-                    <option value="Methadone">Methadone</option>
-                    <option value="MOPD">MOPD</option>
-                    <option value="Oftalmologi">Oftalmologi</option>
-                    <option value="Pejabat Pengarah">Pejabat Pengarah</option>
-                    <option value="Penyeliaan Kejururawatan">Penyeliaan Kejururawatan</option>
-                    <option value="Perpustakaan">Perpustakaan</option>
-                    <option value="Porter">Porter</option>
-                    <option value="SCN/NICU">SCN/NICU</option>
-                    <option value="SOPD">SOPD</option>
-                    <option value="Unit Fisioterapi">Unit Fisioterapi</option>
-                    <option value="Unit Hal Ehwal Islam">Unit Hal Ehwal Islam</option>
-                    <option value="Unit IT">Unit IT</option>
-                    <option value="Unit Kejuruteraan">Unit Kejuruteraan</option>
-                    <option value="Unit Kerja Sosial">Unit Kerja Sosial</option>
-                    <option value="Unit Keselamatan">Unit Keselamatan</option>
-                    <option value="Unit Keselamatan dan Kesihatan">Unit Keselamatan dan Kesihatan</option>
-                    <option value="Unit Kewangan dan Hasil">Unit Kewangan dan Hasil</option>
-                    <option value="Unit Khidmat Pengurusan">Unit Khidmat Pengurusan</option>
-                    <option value="Unit Kualiti">Unit Kualiti</option>
-                    <option value="Unit Patologi dan Tabung Darah">Unit Patologi dan Tabung Darah</option>
-                    <option value="Unit Pembangunan dan Perumahan">Unit Pembangunan dan Perumahan</option>
-                    <option value="Unit Pemulihan Carakerja">Unit Pemulihan Carakerja</option>
-                    <option value="Unit Pendidikan Kesihatan">Unit Pendidikan Kesihatan</option>
-                    <option value="Unit Pengurusan Aset dan Stor">Unit Pengurusan Aset dan Stor</option>
-                    <option value="Unit Perhubungan Awam">Unit Perhubungan Awam</option>
-                    <option value="Unit Psikologi">Unit Psikologi</option>
-                    <option value="Unit Radiologi">Unit Radiologi</option>
-                    <option value="Unit Rekod Perubatan">Unit Rekod Perubatan</option>
-                    <option value="Unit Sumber Manusia">Unit Sumber Manusia</option>
-                    <option value="Wad 10">Wad 10</option>
-                    <option value="Wad 2">Wad 2</option>
-                    <option value="Wad 3">Wad 3</option>
-                    <option value="Wad 4">Wad 4</option>
-                    <option value="Wad 5">Wad 5</option>
-                    <option value="Wad 6">Wad 6</option>
-                    <option value="Wad 8">Wad 8</option>
-                    <option value="Wad 9">Wad 9</option>
+                    <option value="1">Bedah Mulut</option>
+                    <option value="2">Bilik PA Pengarah</option>
+                    <option value="3">CSSU</option>
+                    <option value="4">Daycare</option>
+                    <option value="5">Dewan Bedah</option>
+                    <option value="6">Dewan Bersalin</option>
+                    <option value="7">ENT</option>
+                    <option value="8">Farmasi Bekalan Wad</option>
+                    <option value="9">Farmasi DICE</option>
+                    <option value="10">Farmasi Klinik Pakar</option>
+                    <option value="11">Farmasi Logistik</option>
+                    <option value="12">Farmasi Pengeluaran</option>
+                    <option value="13">Farmasi Wad</option>
+                    <option value="14">Forensik</option>
+                    <option value="15">Hemodialisis</option>
+                    <option value="16">ICU</option>
+                    <option value="17">Jabatan Dietetik dan Sajian</option>
+                    <option value="18">Jabatan Pergigian Pediatrik</option>
+                    <option value="19">Kawalan Infeksi</option>
+                    <option value="20">Kecemasan</option>
+                    <option value="21">Klinik Pakar Obstetrik</option>
+                    <option value="22">Klinik Pakar Ortopedik</option>
+                    <option value="23">Klinik Pakar Pediatrik</option>
+                    <option value="24">Klinik Pakar Psikiatri</option>
+                    <option value="25">Methadone</option>
+                    <option value="26">MOPD</option>
+                    <option value="27">Oftalmologi</option>
+                    <option value="28">Pejabat Pengarah</option>
+                    <option value="29">Penyeliaan Kejururawatan</option>
+                    <option value="30">Perpustakaan</option>
+                    <option value="31">Porter</option>
+                    <option value="32">SCN/NICU</option>
+                    <option value="33">SOPD</option>
+                    <option value="34">Unit Fisioterapi</option>
+                    <option value="35">Unit Hal Ehwal Islam</option>
+                    <option value="36">Unit IT</option>
+                    <option value="37">Unit Kejuruteraan</option>
+                    <option value="38">Unit Kerja Sosial</option>
+                    <option value="39">Unit Keselamatan</option>
+                    <option value="40">Unit Keselamatan dan Kesihatan</option>
+                    <option value="41">Unit Kewangan dan Hasil</option>
+                    <option value="42">Unit Khidmat Pengurusan</option>
+                    <option value="43">Unit Kualiti</option>
+                    <option value="44">Unit Patologi dan Tabung Darah</option>
+                    <option value="45">Unit Pembangunan dan Perumahan</option>
+                    <option value="46">Unit Pemulihan Carakerja</option>
+                    <option value="47">Unit Pendidikan Kesihatan</option>
+                    <option value="48">Unit Pengurusan Aset dan Stor</option>
+                    <option value="49">Unit Perhubungan Awam</option>
+                    <option value="50">Unit Psikologi</option>
+                    <option value="51">Unit Radiologi</option>
+                    <option value="52">Unit Rekod Perubatan</option>
+                    <option value="53">Unit Sumber Manusia</option>
+                    <option value="54">Wad 10</option>
+                    <option value="55">Wad 2</option>
+                    <option value="56">Wad 3</option>
+                    <option value="57">Wad 4</option>
+                    <option value="58">Wad 5</option>
+                    <option value="59">Wad 6</option>
+                    <option value="60">Wad 8</option>
+                    <option value="61">Wad 9</option>
                 </select>
             </div>
-
 
             <div class="form-group">
                 <label for ="noIC">Nombor IC: </label>
@@ -174,8 +196,11 @@
             </div>
 
             <div class="form-group">
-                <label for ="kataLaluan">Kata Laluan: </label>
-                <input type="password" id="kataLaluan" required />
+                <label for="kataLaluan">Kata Laluan: </label>
+                <div class="password-wrapper">
+                    <input type="password" id="kataLaluan" minlength="8" required />
+                    <i class="fa-solid fa-eye toggle-password" onclick="togglePassword()"></i>
+                </div>
             </div>
 
             <div class="form-group">
@@ -213,14 +238,18 @@
         document.getElementById('registrationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-             const kataLaluan = document.getElementById('kataLaluan').value;
+            const kataLaluan = document.getElementById('kataLaluan').value;
             const sahkataLaluan = document.getElementById('sahkataLaluan').value;
+
+            if (kataLaluan.length < 8) {
+                alert('Kata laluan mesti sekurang-kurangnya 8 aksara');
+                return;
+            }
 
             if (kataLaluan !== sahkataLaluan) {
                 alert('Kata laluan dan Sahkan Kata Laluan tidak sama');
-                return; // STOP submit
+                return;
             }
-
 
             const isAdmin = document.querySelector('input[name="isAdmin"]:checked').value;
 
@@ -234,7 +263,6 @@
                 kataLaluan: document.getElementById('kataLaluan').value,
                 isAdmin: isAdmin
             };
-
 
             try {
                 const response = await fetch('daftar1.php', {
@@ -256,6 +284,21 @@
                 console.error(error);
             }
             });
+
+            function togglePassword() {
+                const passInput = document.getElementById("kataLaluan");
+                const icon = document.querySelector(".toggle-password");
+
+                if (passInput.type === "password") {
+                    passInput.type = "text";
+                    icon.classList.remove("fa-eye");
+                    icon.classList.add("fa-eye-slash");
+                } else {
+                    passInput.type = "password";
+                    icon.classList.remove("fa-eye-slash");
+                    icon.classList.add("fa-eye");
+                }
+            }
         </script>
     </body>
 </html>
