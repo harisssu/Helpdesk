@@ -11,8 +11,17 @@ if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '00') {
 $namaUser = $_SESSION['namaUser'];
 $noIC     = $_SESSION['noIC'];
 $idPeranan = $_SESSION['idPeranan'];
-$jabatan  = $_SESSION['jabatan'] ; 
-$idPeranan = $_SESSION['idPeranan']; // Contoh: '00', '01', dll
+$idJabatan = $_SESSION['idJabatan'];
+$sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
+$resultJabatan = mysqli_query($conn, $sqlJabatan);
+
+if ($rowJabatan = mysqli_fetch_assoc($resultJabatan)) {
+    $jabatan = $rowJabatan['namaJabatan'];
+} else {
+    $jabatan = "Tidak Diketahui";
+}
+
+
 
 
 $tarikhAduan = date("Y-m-d");
@@ -32,6 +41,11 @@ if ($row = mysqli_fetch_assoc($resultPeranan)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    if (empty($_POST['lokasi']) || empty($_POST['jenis_masalah'])) {
+    $msg = "Sila lengkapkan Lokasi dan Jenis Masalah.";
+} else {
+
+
     $lokasi = mysqli_real_escape_string($conn, $_POST['lokasi']);
     $jenisMasalah = mysqli_real_escape_string($conn, $_POST['jenis_masalah']);
     $penerangan = mysqli_real_escape_string($conn, $_POST['penerangan']);
@@ -46,20 +60,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $sql = "INSERT INTO aduan 
-        (namaUser, noIC, idPeranan, jabatan, lokasi, jenisMasalah, peneranganMasalah, idStatus, tarikhAduan, masaAduan, attachment)
-        VALUES (
-            '$namaUser',
-            '$noIC',
-            '$idPeranan',
-            '$jabatan',
-            '$lokasi',
-            '$jenisMasalah',
-            '$penerangan',
-             1,
-            '$tarikhAduan',
-            '$masaAduan',
-            '$attachment'
-        )";
+(
+    jenisMasalah,
+    tarikhAduan,
+    noIC,
+    lokasi,
+    masaAduan,
+    peneranganMasalah,
+    attachment,
+    idStatus
+)
+VALUES
+(
+    '$jenisMasalah',
+    '$tarikhAduan',
+    '$noIC',
+    '$lokasi',
+    '$masaAduan',
+    '$penerangan',
+    '$attachment',
+    1
+)";
 
     if (mysqli_query($conn, $sql)) {
         header("Location: Status_Aduan_User.php");
@@ -67,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         echo "Gagal hantar aduan: " . mysqli_error($conn);
     }
+  }
 }
 ?>
 
@@ -293,17 +315,18 @@ body {
 
                     <div class="form-row">
                         <label>Lokasi:</label>
-                        <input type="text" name="lokasi" placeholder="Contoh: Unit Sumber Manusia">
+                        <input type="text" name="lokasi" placeholder="Contoh: Unit Sumber Manusia" required>
                     </div>
 
                     <div class="form-row">
                         <label>Jenis Masalah:</label>
-                        <select name="jenis_masalah">
+                        <select name="jenis_masalah" required>
                             <option value="">-- Pilih --</option>
-                            <option value="Hardware">Hardware</option>
+                            <option value="Komputer">Komputer</option>
                             <option value="Printer">Printer</option>
                             <option value="Software">Software</option>
-                            <option value="Network">Network</option>
+                            <option value="Internet">Internet</option>
+                            <option value="Monitor">Monitor</option>
                             <option value="Lain-lain">Lain-lain</option>
                         </select>
                     </div>
@@ -346,4 +369,4 @@ function confirmLogout() {
 
 </body>
 </html>
- 
+}
