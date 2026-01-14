@@ -3,22 +3,24 @@ session_start();
 date_default_timezone_set("Asia/Kuala_Lumpur");
 include "db_connect.php";
 
-if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '00') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'user') {
     header("Location: login.html");
     exit;
 }
 
-$namaUser = $_SESSION['namaUser'];
-$noIC     = $_SESSION['noIC'];
-$idPeranan = $_SESSION['idPeranan'];
-$idJabatan = $_SESSION['idJabatan'];
-$sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
-$resultJabatan = mysqli_query($conn, $sqlJabatan);
+$noIC = $_SESSION['noIC'];
+$perananNama = "Pengguna";
+$namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
+$idJabatan = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
 
-if ($rowJabatan = mysqli_fetch_assoc($resultJabatan)) {
-    $jabatan = $rowJabatan['namaJabatan'];
-} else {
-    $jabatan = "Tidak Diketahui";
+
+$jabatanNama = "Unknown";
+if ($idJabatan != '') {
+    $sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
+    $resultJabatan = mysqli_query($conn, $sqlJabatan);
+    if ($row = mysqli_fetch_assoc($resultJabatan)) {
+        $jabatanNama = $row['namaJabatan'];
+    }
 }
 
 
@@ -29,15 +31,7 @@ $masaAduan   = date("H:i:s");
 $namaStatus = "Pending";
 $attachment = "";
 $msg = "";
-$perananNama = "";
-$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
-$resultPeranan = mysqli_query($conn, $sqlPeranan);
 
-if ($row = mysqli_fetch_assoc($resultPeranan)) {
-    $perananNama = $row['namaPeranan']; // Contoh: 'Pengguna', 'Admin'
-} else {
-    $perananNama = "Unknown";
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -310,7 +304,7 @@ body {
                         <input type="text" value="<?= htmlspecialchars($namaUser); ?>" readonly>
 
                         <label>Bahagian / Unit:</label>
-                        <input type="text" value="<?= htmlspecialchars($jabatan); ?>" readonly>
+                        <input type="text" value="<?= htmlspecialchars($jabatanNama); ?>" readonly>
                     </div>
 
                     <div class="form-row">
@@ -353,15 +347,6 @@ body {
 
 
 <script>
-document.getElementById("removeFile").addEventListener("click", function () {
-    const fileInput = document.getElementById("attachment");
-    fileInput.value = ""; // buang file
-
-    alert("Attachment telah dibuang");
-});
-</script>
-
-<script>
 function confirmLogout() {
     return confirm("Anda Pasti Untuk Log Keluar?");
 }
@@ -369,4 +354,3 @@ function confirmLogout() {
 
 </body>
 </html>
-}
