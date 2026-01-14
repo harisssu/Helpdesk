@@ -1,0 +1,278 @@
+<?php
+session_start();
+include "db_connect.php";
+
+if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'ketua unit') {
+    header("Location: login.html");
+    exit;
+}
+
+
+$namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
+$idJabatan = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
+$perananNama = "Ketua Unit";
+
+$jabatanNama = "Unknown";
+if ($idJabatan != '') {
+    $sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
+    $resultJabatan = mysqli_query($conn, $sqlJabatan);
+    if ($row = mysqli_fetch_assoc($resultJabatan)) {
+        $jabatanNama = $row['namaJabatan'];
+    }
+}
+$sql = "
+SELECT 
+    a.idAduan,
+    a.tarikhAduan,
+    a.masaAduan,
+    a.lokasi,
+    a.jenisMasalah,
+    '-' AS namaTechnician,
+    s.namaStatus
+FROM aduan a
+JOIN user u ON a.noIC = u.noIC
+JOIN status s ON a.idStatus = s.idStatus
+WHERE u.idJabatan = '$idJabatan'
+ORDER BY a.tarikhAduan DESC, a.masaAduan DESC
+";
+
+
+$result = mysqli_query($conn, $sql);
+if (!$result) {
+    die("SQL Error: " . mysqli_error($conn));
+}
+?>
+
+<html>
+<head>
+    <title>e-ICT Aduan - Ketua Unit</title>
+
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url("background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+}
+.app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+}
+
+.topbar {
+    height: 50px;
+    background: #5b0067ff;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: none;
+    flex-shrink: 0;
+}
+
+.topbar .system {
+    font-weight: bold;
+    color: #fff;
+    margin-right: 35px;
+    font-size: 30px;
+}
+
+.topbar .page-title {
+    font-weight: bold;
+    color: #ffffffff;
+    margin-left:30px; 
+    font-size: 25px;
+}
+
+.layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 240px;
+    background: #e6e6e6;
+    border-right: none;
+    flex-shrink: 0;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    border-bottom: 1px solid #000;
+}
+
+.user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.menu a {
+    display: block;
+    padding: 15px 18px;
+    text-decoration: none;
+    color: #000;
+    border-bottom: 1px solid #000;
+}
+
+.menu a:hover {
+    background: #d9d9d9;
+}
+
+.menu a.active {
+    color: #5b0067ff;
+    font-weight: bold;
+    background: transparent;
+}
+
+.content {
+    flex: 1;
+    padding: 30px;
+    background:transparent;
+    overflow: auto;
+}
+
+.aduan-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.aduan-table th,
+.aduan-table td {
+    border: 1px solid #000;
+    padding: 10px;
+    text-align: center;
+}
+
+.aduan-table th {
+    background: #e6e6e6;
+    font-weight: bold;
+}
+
+.sidebar {
+    width: 240px;
+    background: #e6e6e6;
+    border-right: none;
+    flex-shrink: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.menu {
+    flex: 1; /
+}
+
+.sidebar-logout {
+    padding: 15px;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 8px 0;
+    border: none;
+    border-radius: 8px;
+    background: #5b0067ff;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+    <div class="topbar">
+        <div class="system">e-ICT Aduan</div>
+        <div class="page-title">Status Aduan Unit</div>
+    </div>
+
+    <div class="layout">
+
+        <div class="sidebar">
+            <div class="user-info">
+                <img src="profile.jpg" alt="User">
+                <div>
+                    <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                    <small><?= htmlspecialchars($perananNama); ?></small>
+                </div>
+            </div>
+
+            <div class="menu">
+                <a href="ketuaunitdashboard.php" class="active">Status Aduan</a>
+                <a href="Hantar_Aduan_KetuaUnit.php">Hantar Aduan</a>
+                <a href="Senarai_pengguna_ketuaunit.php">Senarai Pengguna</a>
+            </div>
+
+            <div class="sidebar-logout">
+                <form action="logout.php" method="post">
+                    <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="content">
+            <table class="aduan-table">
+                <thead>
+                    <tr>
+                        <th>Bil</th>
+                        <th>Tarikh dan Masa Aduan</th>
+                        <th>Lokasi</th>
+                        <th>Jenis Masalah</th>
+                        <th>Nama Technician</th>
+                        <th>Tarikh dan Masa Kemaskini</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $bil = 1;
+                    if (mysqli_num_rows($result) > 0) {
+                        while ($row = mysqli_fetch_assoc($result)) {
+                            echo "<tr>";
+                            echo "<td>".$bil++."</td>";
+                            echo "<td>".htmlspecialchars($row['tarikhMasaAduan'])."</td>";
+                            echo "<td>".htmlspecialchars($row['lokasi'])."</td>";
+                            echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
+                            echo "<td>".htmlspecialchars(isset($row['namaTechnician']) ? $row['namaTechnician'] : '-')."</td>";
+                            echo "<td>".htmlspecialchars(isset($row['tarikhMasaKemaskini']) ? $row['tarikhMasaKemaskini'] : '-')."</td>";
+
+                            echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
+                            echo "</tr>";
+                        }
+                    } else {
+                        echo "<tr><td colspan='7'>Tiada aduan direkodkan untuk unit anda</td></tr>";
+                    }
+                    ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmLogout() {
+    return confirm("Anda Pasti Untuk Log Keluar?");
+}
+</script>
+
+</body>
+</html>
