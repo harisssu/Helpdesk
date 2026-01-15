@@ -2,34 +2,14 @@
 session_start();
 include "db_connect.php";
 
-if (!isset($_SESSION['noIC']) || $_SESSION['idPeranan'] !== '01') {
+if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'admin') {
     header("Location: login.html");
     exit;
 }
 
-$namaUser = $_SESSION['namaUser'];
-$noIC     = $_SESSION['noIC'];
-$idPeranan = $_SESSION['idPeranan'];
-$idJabatan = $_SESSION['idJabatan'];
-$perananNama = "";
-$sqlPeranan = "SELECT namaPeranan FROM peranan WHERE idPeranan = '$idPeranan'";
-$resultPeranan = mysqli_query($conn, $sqlPeranan);
-
-if ($row = mysqli_fetch_assoc($resultPeranan)) {
-    $perananNama = $row['namaPeranan']; 
-} else {
-    $perananNama = "Unknown";
-}
-
-$jabatanNama = "";
-$sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
-$resultJabatan = mysqli_query($conn, $sqlJabatan);
-
-if ($row = mysqli_fetch_assoc($resultJabatan)) {
-    $jabatanNama = $row['namaJabatan'];
-} else {
-    $jabatanNama = "Unknown";
-}
+$namaUser   = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
+$idJabatan  = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
+$perananNama = "Admin";
 
 $sql = "SELECT 
             a.idAduan,
@@ -38,18 +18,19 @@ $sql = "SELECT
             a.jenisMasalah,
             a.tarikhAduan,
             s.namaStatus,
-            a.idStatus
+            a.idStatus,
+            t.namaTechnician
         FROM aduan a
         LEFT JOIN user u ON a.noIC = u.noIC
         LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
         LEFT JOIN status s ON a.idStatus = s.idStatus
+        LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
         ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
 
 $result = mysqli_query($conn, $sql);
 if (!$result) {
     die("SQL Error: " . mysqli_error($conn));
 }
-
 ?>
 <html>
     <head>
@@ -396,10 +377,26 @@ if (!$result) {
                                                 <td>{$row['namaUser']}</td>
                                                 <td>{$row['jenisMasalah']}</td>
                                                 <td>{$row['namaJabatan']}</td>
-                                                <td>{$row['namaUser']}</td>
+                                                <td>{$row['namaTechnician']}</td>
                                                 <td>{$row['tarikhAduan']}</td>
                                                 <td>{$status}</td>
+                                                <td>
+                                                    <button 
+                                                        class='lihat-btn'
+                                                        data-id='{$row['idAduan']}'
+                                                        style='
+                                                            padding:4px 10px;
+                                                            background:#0306a0ff;
+                                                            color:white;
+                                                            border:none;
+                                                            border-radius:5px;
+                                                            cursor:pointer;
+                                                        '>
+                                                        Lihat
+                                                    </button>
+                                                </td>
                                             </tr>";
+
 
                                         $bil++;
                                     }
@@ -417,6 +414,9 @@ if (!$result) {
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
         <script>
+
+            let currentAduanId = null;
+
             $(document).ready(function () {
                 $('#jenis_masalah').select2({
                     placeholder: "-- Pilih --",
@@ -427,7 +427,178 @@ if (!$result) {
             function confirmLogout() {
                 return confirm("Anda Pasti Untuk Log Keluar?");
             }
+
+            $(document).on('click', '.lihat-btn', function () {
+                const idAduan = $(this).data('id');
+
+                $.ajax({
+                    url: 'get_aduan.php',
+                    type: 'POST',
+                    data: { idAduan: idAduan },
+                    dataType: 'json',
+                    success: function (data) {
+                        currentAduanId = data.idAduan;
+
+                        $('#m_idAduan').text(data.idAduan);
+                        $('#m_jenisMasalah').text(data.jenisMasalah);
+                        $('#m_tarikhAduan').text(data.tarikhAduan);
+                        $('#m_masaAduan').text(data.masaAduan);
+                        $('#m_namaUser').text(data.namaUser);
+                        $('#m_noIC').text(data.noIC);
+                        $('#m_lokasi').text(data.lokasi);
+                        $('#m_peneranganMasalah').text(data.peneranganMasalah);
+                        $('#m_idStatus').text(data.idStatus);
+                        $.getJSON('get_technician.php', function (techs) {
+
+                            const select = $('#m_noICTechnician');
+                            select.empty();
+                            select.append('<option value="">-- Pilih Technician --</option>');
+
+                            techs.forEach(function (tech) {
+                                const selected = tech.noICTechnician === data.noICTechnician ? 'selected' : '';
+                                select.append(
+                                    `<option value="${tech.noICTechnician}" ${selected}>
+                                        ${tech.namaTechnician}
+                                    </option>`
+                                );
+                            });
+                        });
+
+
+                        if (data.attachment) {
+                            $('#m_attachment').attr('href', data.attachment).show();
+                        } else {
+                            $('#m_attachment').hide();
+                        }
+
+                        $('#aduanModal').css('display', 'flex');
+                    },
+                    error: function () {
+                        alert('Gagal ambil data aduan');
+                    }
+                });
+            });
+
+
+            function closeModal() {
+                $('#aduanModal').hide();
+            }
+
+            $(document).on('click', '#btnAssignTech', function (e) {
+    e.preventDefault();
+
+    if (!currentAduanId) {
+        alert('ID Aduan tidak dijumpai');
+        return;
+    }
+
+    const techIC = $('#m_noICTechnician').val();
+
+    if (!techIC) {
+        alert('Sila pilih technician');
+        return;
+    }
+
+    $.ajax({
+        url: 'tetapkan_technician.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            idAduan: currentAduanId,
+            noICTechnician: techIC
+        },
+        success: function (res) {
+            console.log(res);
+
+            if (res.success) {
+                alert('Technician berjaya ditetapkan');
+                location.reload();
+            } else {
+                alert(res.msg || 'Gagal simpan');
+            }
+        },
+        error: function (xhr) {
+            console.error(xhr.responseText);
+            alert('AJAX error');
+        }
+    });
+});
+
+
         </script>
 
+        <div id="aduanModal" style="
+            display:none;
+            position:fixed;
+            top:0; left:0;
+            width:100%; height:100%;
+            background:rgba(0,0,0,0.5);
+            justify-content:center;
+            align-items:center;
+            z-index:9999;
+        ">
+            <div style="
+                background:#fff;
+                padding:20px;
+                width:600px;
+                max-height:90vh;
+                overflow:auto;
+                border-radius:8px;
+                position:relative;
+            ">
+                <h3>Maklumat Aduan</h3>
+
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr><td><b>ID Aduan</b></td><td id="m_idAduan"></td></tr>
+                    <tr><td><b>Jenis Masalah</b></td><td id="m_jenisMasalah"></td></tr>
+                    <tr><td><b>Tarikh Aduan</b></td><td id="m_tarikhAduan"></td></tr>
+                    <tr><td><b>Masa Aduan</b></td><td id="m_masaAduan"></td></tr>
+                    <tr>
+                        <td><b>Nama Pengadu</b></td>
+                        <td id="m_namaUser"></td>
+                    </tr>
+                    <tr>
+                        <td><b>No IC</b></td>
+                        <td id="m_noIC"></td>
+                    </tr>
+                    <tr><td><b>Lokasi</b></td><td id="m_lokasi"></td></tr>
+                    <tr><td><b>Penerangan</b></td><td id="m_peneranganMasalah"></td></tr>
+                    <tr><td><b>Status</b></td><td id="m_idStatus"></td></tr>
+                    <tr>
+                        <td><b>Nama Technician</b></td>
+                        <td>
+                            <select id="m_noICTechnician" style="width:100%; padding:6px;">
+                                <option value="">-- Pilih Technician --</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr><td><b>Lampiran</b></td>
+                        <td><a id="m_attachment" target="_blank">Lihat</a></td>
+                    </tr>
+                </table>
+
+                <br>
+                <button onclick="closeModal()" style="
+                    padding:6px 20px;
+                    background:#999;
+                    border:none;
+                    color:white;
+                    border-radius:5px;
+                    cursor:pointer;
+                ">Tutup</button>
+
+                <button id="btnAssignTech" style="
+                    padding:6px 20px;
+                    background:#0306a0ff;
+                    border:none;
+                    color:white;
+                    border-radius:5px;
+                    cursor:pointer;
+                ">
+                    Simpan
+                </button>
+
+            </div>
+        </div>
     </body>
 </html>
