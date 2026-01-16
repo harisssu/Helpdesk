@@ -26,11 +26,13 @@ $sql = "SELECT
             j.namaJabatan,
             a.jenisMasalah,
             a.tarikhAduan,
-            s.namaStatus
+            s.namaStatus,
+            t.namaTechnician
         FROM aduan a
         LEFT JOIN user u ON a.noIC = u.noIC
         LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
         LEFT JOIN status s ON a.idStatus = s.idStatus
+        LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
         ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
 
 $result = mysqli_query($conn, $sql);
@@ -136,7 +138,7 @@ if (!$result) {
                             echo "<td>".htmlspecialchars($row['namaUser'])."</td>";
                             echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
                             echo "<td>".htmlspecialchars($row['namaJabatan'])."</td>";
-                            echo "<td>-</td>";
+                            echo "<td>".htmlspecialchars($row['namaTechnician'])."</td>";
                             echo "<td>".date('d/m/Y', strtotime($row['tarikhAduan']))."</td>";
                             echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
                             echo "</tr>";
