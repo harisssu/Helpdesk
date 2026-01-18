@@ -43,6 +43,29 @@ if ($stmt) {
     }
 }
 
+$stmt = $conn->prepare("SELECT noICKetua, namaKetua, kataLaluanKetua FROM ketuaunit WHERE noICKetua = ? LIMIT 1");
+if ($stmt) {
+    $stmt->bind_param("s", $noIC);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+        if ($pass === $user['kataLaluanKetua']) {
+            $_SESSION['noIC'] = $user['noICKetua'];
+            $_SESSION['nama'] = $user['namaKetua'];
+            $_SESSION['idJabatan'] = $row['idJabatan'];
+            $_SESSION['role'] = 'ketua unit';
+            $redirect = "ketuaunitdashboard.php";
+            echo json_encode(array("success"=>true,"redirect"=>$redirect));
+            exit;
+        } else {
+            echo json_encode(array("success"=>false,"error"=>"Kata laluan salah"));
+            exit;
+        }
+    }
+}
+
+
 $stmt = $conn->prepare("SELECT noICTechnician, namaTechnician, kataLaluanTechnician FROM technician WHERE noICTechnician = ? LIMIT 1");
 if ($stmt) {
     $stmt->bind_param("s", $noIC);
