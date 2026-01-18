@@ -1,73 +1,92 @@
 <?php
 include "db_connect.php";
-header('Content-Type: application/json');
 
-if (!isset($_POST['noIC'], $_POST['type'])) {
+$noIC = isset($_POST['noIC']) ? $_POST['noIC'] : '';
+$type = isset($_POST['type']) ? $_POST['type'] : '';
+
+if(!$noIC || !$type){
     echo json_encode([]);
     exit;
 }
 
-$noIC = $_POST['noIC'];
-$type = $_POST['type'];
+$tables = [
+    'user' => [
+        'table'=>'user',
+        'noIC'=>'noIC',
+        'name'=>'namaUser',
+        'email'=>'emel',
+        'idJabatan'=>'idJabatan',
+        'idPeranan'=>'idPeranan',
+        'password'=>'kataLaluan',
+        'jawatan'=>'jawatan',
+        'noOffice'=>'noOffice'
+    ],
+    'admin' => [
+        'table'=>'admin',
+        'noIC'=>'noICAdmin',
+        'name'=>'namaAdmin',
+        'email'=>'emelAdmin',
+        'idJabatan'=>'idJabatan',
+        'idPeranan'=>'idPeranan',
+        'password'=>'kataLaluanAdmin',
+        'jawatan'=>'jawatanAdmin',
+        'noOffice'=>'noOfficeAdmin'
+    ],
+    'technician' => [
+        'table'=>'technician',
+        'noIC'=>'noICTechnician',
+        'name'=>'namaTechnician',
+        'email'=>'emelTechnician',
+        'idJabatan'=>'idJabatan',
+        'idPeranan'=>'idPeranan',
+        'password'=>'kataLaluanTechnician',
+        'jawatan'=>'jawatanTechnician',
+        'noOffice'=>'noOfficeTechnician'
+    ],
+    'ketuaunit' => [
+        'table'=>'ketuaunit',
+        'noIC'=>'noICKetua',
+        'name'=>'namaKetua',
+        'email'=>'emelKetua',
+        'idJabatan'=>'idJabatan',
+        'idPeranan'=>'idPeranan',
+        'password'=>'kataLaluanKetua',
+        'jawatan'=>'jawatanKetua',
+        'noOffice'=>'noOfficeKetua'
+    ]
+];
 
-switch ($type) {
-    case 'user':
-        $sql = "SELECT noIC, namaUser, emel, idJabatan, idPeranan, kataLaluan FROM user WHERE noIC=?";
-        break;
-
-    case 'admin':
-        $sql = "SELECT noICAdmin AS noIC, namaAdmin AS namaUser, emelAdmin AS emel, 
-                       idJabatan, idPeranan, kataLaluanAdmin AS kataLaluan
-                FROM admin WHERE noICAdmin=?";
-        break;
-
-    case 'technician':
-        $sql = "SELECT noICTechnician AS noIC, namaTechnician AS namaUser, emelTechnician AS emel, 
-                       idJabatan, idPeranan, kataLaluanTechnician AS kataLaluan
-                FROM technician WHERE noICTechnician=?";
-        break;
-
-    case 'ketuaunit':
-        $sql = "SELECT noICKetua AS noIC, namaKetua AS namaUser, emelKetua AS emel, 
-                       idJabatan, idPeranan, kataLaluanKetua AS kataLaluan
-                FROM ketuaunit WHERE noICKetua=?";
-        break;
-}
-
-
-$stmt = $conn->prepare($sql);
-
-if (!$stmt) {
-    echo json_encode([
-        'error' => 'Prepare failed',
-        'mysql_error' => $conn->error
-    ]);
+if(!isset($tables[$type])){
+    echo json_encode([]);
     exit;
 }
 
+$cols = $tables[$type];
+
+$sql = "SELECT * FROM ".$cols['table']." WHERE ".$cols['noIC']." = ?";
+$stmt = $conn->prepare($sql);
+if(!$stmt){
+    echo json_encode([]);
+    exit;
+}
 $stmt->bind_param("s", $noIC);
 $stmt->execute();
+$result = $stmt->get_result();
+$data = $result->fetch_assoc();
 
-$stmt->bind_result(
-    $r_noIC,
-    $r_nama,
-    $r_emel,
-    $r_jabatan,
-    $r_peranan,
-    $r_pass
-);
-
-if ($stmt->fetch()) {
-    echo json_encode([
-        'noIC' => $r_noIC,
-        'namaUser' => $r_nama,
-        'emel' => $r_emel,
-        'idJabatan' => $r_jabatan,
-        'idPeranan' => $r_peranan,
-        'kataLaluan' => $r_pass
-    ]);
+if($data){
+    $response = [
+        'noIC' => $data[$cols['noIC']],
+        'namaUser' => $data[$cols['name']],
+        'emel' => $data[$cols['email']],
+        'idJabatan' => $data[$cols['idJabatan']],
+        'idPeranan' => $data[$cols['idPeranan']],
+        'kataLaluan' => $data[$cols['password']],
+        'jawatan' => $data[$cols['jawatan']],
+        'noOffice' => $data[$cols['noOffice']]
+    ];
+    echo json_encode($response);
 } else {
     echo json_encode([]);
 }
-
-$stmt->close();
+?>
