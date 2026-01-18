@@ -1,10 +1,54 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>e-ICT Aduan</title>
+<?php
+session_start();
+include "db_connect.php";
 
-        <style>
-            body {
+// Ensure the user is logged in and has the correct role (technician)
+if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'technician') {
+    header("Location: login.html");
+    exit;
+}
+
+// Get session variables
+$noICTechnician = $_SESSION['noIC'];  // This is the technician's IC number (unique for each technician)
+$namaUser       = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
+$idJabatan      = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
+$perananNama    = "Technician";
+
+// Query to fetch the complaints assigned to the technician
+$sql = "SELECT 
+            a.idAduan,
+            u.namaUser,
+            j.namaJabatan,
+            a.jenisMasalah,
+            a.tarikhAduan,
+            a.masaAduan,
+            s.namaStatus,
+            a.idStatus,
+            t.namaTechnician
+        FROM aduan a
+        LEFT JOIN user u ON a.noIC = u.noIC
+        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+        LEFT JOIN status s ON a.idStatus = s.idStatus
+        LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
+        WHERE a.noICTechnician = ?  -- Only get complaints assigned to the logged-in technician
+        ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $noICTechnician);  // Bind the technician's IC number to the query
+$stmt->execute();
+$result = $stmt->get_result();  // Get the result of the query
+
+// Check if complaints are found
+if (!$result) {
+    die("SQL Error: " . mysqli_error($conn));
+}
+?>
+
+<html>
+<head>
+    <title>e-ICT Aduan</title>
+    <style>
+        body {
             font-family: 'Arial', sans-serif;           /*set the font style of all text*/
             margin: 0;                                  /*make bg touch edges of screen*/
             height: 100vh;
@@ -150,30 +194,22 @@
             font-weight: bold;
             cursor: pointer;
             }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="topbar">
+            <div class="system">e-ICT Aduan</div>
+            <div class="page-title">Senarai Aduan</div>
+        </div>
 
-
-        </style>
-    </head>
-    
-    <body>
-        <div class="app">
-
-    
-            <div class="topbar">
-                <div class="system">e-ICT Aduan</div>
-                <div class="page-title">Senarai Aduan</div>
-            </div>
-
-  
-            <div class="layout">
-
-        
-                <div class="sidebar">
-                    <div class="user-info">
-                        <img src="profile.jpg" alt="User">
+        <div class="layout">
+            <div class="sidebar">
+                <div class="user-info">
+                    <img src="profile.jpg" alt="User">
                     <div>
-                        <strong>Fuyu</strong><br>
-                        <small>Technician</small>
+                        <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                        <small><?= htmlspecialchars($perananNama); ?></small>
                     </div>
                 </div>
 
@@ -182,13 +218,14 @@
                 </div>
 
                 <div class="sidebar-logout">
-                    <button class="logout-btn">Logout</button>
+                    <form action="logout.php" method="post">
+                        <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+                    </form>
                 </div>
             </div>
-        
-        <!-- table in senarai aduan -->
-        <div class="content">
-            <!-- Filter section -->
+
+            <div class="content">
+                <!-- Filter section -->
              <div style="margin-botto,:15px;">
                 Status:
                 <select id="statusFilter" onchange="filterTable()">     <!--Status option-->
@@ -272,36 +309,56 @@
             </div>
         <!-- End of filter section -->
 
-            <table class="aduan-table">
-            <thead>
-                <tr>
-                    <th>Bil</th>
-                    <th>Id Aduan</th>
-                    <th>Nama Pengadu</th>
-                    <th>Masalah</th>
-                    <th>Unit</th>
-                    <th>Status</th>
-                    <th>Tarikh Aduan</th>
-                    <th>Tindakan</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <!-- temporary data -->
-                    <td>1</td>
-                    <td>67</td>
-                    <td>Ahmad</td>
-                    <td>monitor</td>
-                    <td>Radiologi</td>
-                    <td>Dalam Tindakan</td>
-                    <td>2026-01-10</td>
-                    <td>
-                        <a href="Lihat_Technician.php">
-                        <button>Lihat</button>
-                        </a>
-                    </td>
-                </tr>
-            </tbody>
+                <table class="aduan-table">
+                    <thead>
+                        <tr>
+                            <th>Bil</th>
+                            <th>Id Aduan</th>
+                            <th>Nama Pengadu</th>
+                            <th>Jenis Masalah</th>
+                            <th>Unit</th>
+                            <th>Tarikh dan Masa Aduan</th>
+                            <th>Status</th>
+                            <th>Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $bil = 1;
+                        // Loop through the results and display the complaints in the table
+                        if ($result->num_rows > 0) {
+                            while ($row = $result->fetch_assoc()) {
+                                $statusText = $row['namaStatus']; // Get the readable status
+                                echo "<tr>
+                                    <td>{$bil}</td>
+                                    <td>{$row['idAduan']}</td>
+                                    <td>{$row['namaUser']}</td>
+                                    <td>{$row['jenisMasalah']}</td>
+                                    <td>{$row['namaJabatan']}</td>
+                                    <td>{$row['tarikhAduan']}</td>
+                                    <td>{$statusText}</td>
+                                    <td>
+                                        <a href='Lihat_Technician.php?idAduan={$row['idAduan']}'>
+                                            <button>Lihat</button>
+                                        </a>
+                                    </td>
+                                </tr>";
+                                $bil++;
+                            }
+                        } else {
+                            echo "<tr><td colspan='8'>No complaints found</td></tr>";
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </body>
+    </div>
+
+    <script>
+        function confirmLogout() {
+            return confirm("Anda Pasti Untuk Log Keluar?");
+        }
+    </script>
+</body>
 </html>
