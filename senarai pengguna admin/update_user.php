@@ -2,21 +2,54 @@
 include "db_connect.php";
 header('Content-Type: application/json');
 
-if(isset($_POST['noIC'], $_POST['namaUser'], $_POST['emel'], $_POST['idJabatan'], $_POST['idPeranan'], $_POST['kataLaluan'], $_POST['table'])) {
+if(isset($_POST['noIC'], $_POST['namaUser'], $_POST['emel'], $_POST['idJabatan'], $_POST['jawatan'], $_POST['noOffice'], $_POST['kataLaluan'], $_POST['table'])) {
 
     $noIC = $_POST['noIC'];
     $table = $_POST['table'];
     $namaUser = $_POST['namaUser'];
     $emel = $_POST['emel'];
     $idJabatan = $_POST['idJabatan'];
-    $idPeranan = $_POST['idPeranan'];
     $kataLaluan = $_POST['kataLaluan'];
+    $jawatan  = $_POST['jawatan'];
+    $noOffice = $_POST['noOffice'];
 
     $tables = [
-        'user' => ['noIC'=>'noIC', 'name'=>'namaUser', 'email'=>'emel', 'idJabatan'=>'idJabatan', 'idPeranan'=>'idPeranan', 'password'=>'kataLaluan'],
-        'admin' => ['noIC'=>'noICAdmin', 'name'=>'namaAdmin', 'email'=>'emelAdmin', 'idJabatan'=>'idJabatan', 'idPeranan'=>'idPeranan', 'password'=>'kataLaluan'],
-        'technician' => ['noIC'=>'noICTechnician', 'name'=>'namaTechnician', 'email'=>'emelTechnician', 'idJabatan'=>'idJabatan', 'idPeranan'=>'idPeranan', 'password'=>'kataLaluan'],
-        'ketuaunit' => ['noIC'=>'noICKetua', 'name'=>'namaKetua', 'email'=>'emelKetua', 'idJabatan'=>'idJabatan', 'idPeranan'=>'idPeranan', 'password'=>'kataLaluan']
+        'user' => [
+            'noIC'=>'noIC',
+            'name'=>'namaUser',
+            'email'=>'emel',
+            'idJabatan'=>'idJabatan',
+            'password'=>'kataLaluan',
+            'jawatan'=>'jawatan',
+            'noOffice'=>'noOffice'
+        ],
+        'admin' => [
+            'noIC'=>'noICAdmin',
+            'name'=>'namaAdmin',
+            'email'=>'emelAdmin',
+            'idJabatan'=>'idJabatan',
+            'password'=>'kataLaluanAdmin',
+            'jawatan'=>'jawatanAdmin',
+            'noOffice'=>'noOfficeAdmin'
+        ],
+        'technician' => [
+            'noIC'=>'noICTechnician',
+            'name'=>'namaTechnician',
+            'email'=>'emelTechnician',
+            'idJabatan'=>'idJabatan',
+            'password'=>'kataLaluanTechnician',
+            'jawatan'=>'jawatanTechnician',
+            'noOffice'=>'noOfficeTechnician'
+        ],
+        'ketuaunit' => [
+            'noIC'=>'noICKetua',
+            'name'=>'namaKetua',
+            'email'=>'emelKetua',
+            'idJabatan'=>'idJabatan',
+            'password'=>'kataLaluanKetua',
+            'jawatan'=>'jawatanKetua',
+            'noOffice'=>'noOfficeKetua'
+        ]
     ];
 
     if(!isset($tables[$table])){
@@ -27,12 +60,13 @@ if(isset($_POST['noIC'], $_POST['namaUser'], $_POST['emel'], $_POST['idJabatan']
     $cols = $tables[$table];
 
     $sql = "UPDATE $table SET 
-                ".$cols['name']." = ?,
-                ".$cols['email']." = ?,
-                ".$cols['idJabatan']." = ?,
-                ".$cols['idPeranan']." = ?,
-                ".$cols['password']." = ?
-            WHERE ".$cols['noIC']." = ?";
+        ".$cols['name']." = ?,
+        ".$cols['email']." = ?,
+        ".$cols['idJabatan']." = ?,
+        ".$cols['jawatan']." = ?,
+        ".$cols['noOffice']." = ?,
+        ".$cols['password']." = ?
+    WHERE ".$cols['noIC']." = ?";
 
     $stmt = $conn->prepare($sql);
     if(!$stmt){
@@ -40,7 +74,16 @@ if(isset($_POST['noIC'], $_POST['namaUser'], $_POST['emel'], $_POST['idJabatan']
         exit;
     }
 
-    $stmt->bind_param("ssiiis", $namaUser, $emel, $idJabatan, $idPeranan, $kataLaluan, $noIC);
+    $stmt->bind_param(
+        "sssssss",
+        $namaUser,
+        $emel,
+        $idJabatan,
+        $jawatan,
+        $noOffice,
+        $kataLaluan,
+        $noIC
+    );
 
     if($stmt->execute()){
         echo json_encode(['status'=>'success','message'=>'Maklumat pengguna berjaya dikemaskini!']);
