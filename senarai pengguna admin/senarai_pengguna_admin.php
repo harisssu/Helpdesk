@@ -430,52 +430,56 @@ if (!$result) {
                     <div style="background:#fff; padding:20px; border-radius:8px; width:400px; position:relative;">
                         <h3>Edit User</h3>
                         <form id="editUserForm">
-                            <input type="hidden" name="userType" id="modalUserType">
+                            <input type="hidden" name="table" id="modalUserType">
+
 
                             <div class="form-row">
                                 <label>No IC:</label>
                                 <input type="text" name="noIC" id="modalNoIC">
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Nama:</label>
                                 <input type="text" name="namaUser" id="modalNamaUser">
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Kata Laluan:</label>
                                 <input type="text" name="kataLaluan" id="modalKatalaluan">
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Jabatan:</label>
-                                <select name="idJabatan" id="modalJabatan"><?php
-                                $jabatanRes = mysqli_query($conn, "SELECT * FROM jabatan");
+                                <select name="idJabatan" id="modalJabatan" required>
+                                <?php
+                                $jabatanRes = mysqli_query($conn, "SELECT * FROM jabatan ORDER BY idJabatan ASC");
                                 while($jab = mysqli_fetch_assoc($jabatanRes)){
                                     echo "<option value='".$jab['idJabatan']."'>".$jab['namaJabatan']."</option>";
                                 }
-                                ?></select>
-                            </div>
+                                ?>
+                                </select>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Emel:</label>
                                 <input type="email" name="emel" id="modalEmel">
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
-                                <label>Peranan:</label>
-                                <select name="idPeranan" id="modalPeranan"><?php
-                                $perananRes = mysqli_query($conn, "SELECT * FROM peranan");
-                                while($per = mysqli_fetch_assoc($perananRes)){
-                                    echo "<option value='".$per['idPeranan']."'>".$per['namaPeranan']."</option>";
-                                }
-                                ?></select><br><br>
-                            </div>
+                                <label>Jawatan:</label>
+                                <input type="text" name="jawatan" id="modalJawatan">
+                            </div><br>
+
+                            <div class="form-row">
+                                <label>No Office:</label>
+                                <input type="text" name="noOffice" id="modalNoOffice">
+                            </div><br>
+
                                 <center>
-                                    <button type="submit">Simpan</button>
                                     <button type="button" onclick="closeModal()">Tutup</button>
                                     <button type="button" id="deleteUserBtn">Buang</button>
-                                </center>
+                                    <button type="submit" style='padding:4px 10px; background:#0306a0ff; color:white; border:none; border-radius:5px; cursor:pointer;'>Simpan</button>
+                                </center>  
 
                         </form>
                     </div>
@@ -489,17 +493,17 @@ if (!$result) {
                             <div class="form-row">
                                 <label>No IC:</label>
                                 <input type="text" name="noIC" required>
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Nama:</label>
                                 <input type="text" name="namaUser" required>
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Kata Laluan:</label>
                                 <input type="text" name="kataLaluan" required>
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Jabatan:</label>
@@ -511,12 +515,22 @@ if (!$result) {
                                     }
                                     ?>
                                 </select>
-                            </div>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Emel:</label>
                                 <input type="email" name="emel" required>
-                            </div>
+                            </div><br>
+
+                            <div class="form-row">
+                                <label>Jawatan:</label>
+                                <input type="text" name="jawatan" required>
+                            </div><br>
+
+                            <div class="form-row">
+                                <label>No Office:</label>
+                                <input type="text" name="noOffice" required>
+                            </div><br>
 
                             <div class="form-row">
                                 <label>Peranan:</label>
@@ -527,15 +541,20 @@ if (!$result) {
                                     <option value="technician">Technician</option>
                                     <option value="ketuaunit">Ketua Unit</option>
                                 </select>
-                            </div>
+                            </div><br>
 
                             <center>
-                                <button type="submit">Simpan</button>
                                 <button type="button" onclick="closeAddModal()">Tutup</button>
+                                <button type="submit" style='padding:4px 10px;
+                                                            background:#0306a0ff;
+                                                            color:white;
+                                                            border:none;
+                                                            border-radius:5px;
+                                                            cursor:pointer;'>Simpan</button>
                             </center>
                         </form>
                     </div>
-                </div>
+                </div>  
 
                 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
                 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -600,16 +619,16 @@ if (!$result) {
                                     return;
                                 }
 
-                                $('#modalNoIC').val(data.noIC);
-                                $('#modalNamaUser').val(data.namaUser);
-                                $('#modalEmel').val(data.emel);
-                                $('#modalJabatan').val(data.idJabatan);
-                                $('#modalPeranan').val(data.idPeranan);
-                                $('#modalKatalaluan').val(data.kataLaluan);
-                                $('#modalUserType').val(type);
+                                    $('#modalNoIC').val(data.noIC);
+                                    $('#modalNamaUser').val(data.namaUser);
+                                    $('#modalEmel').val(data.emel);
+                                    $('#modalJabatan').val(data.idJabatan);
+                                    $('#modalJawatan').val(data.jawatan);
+                                    $('#modalNoOffice').val(data.noOffice);
 
-                                $('#editUserModal').css('display', 'flex');
-                            },
+                                    $('#modalUserType').val(type);
+                                    $('#editUserModal').css('display', 'flex');
+                                },  
                             error: function (xhr) {
                                 alert(xhr.responseText);
                             }
@@ -622,9 +641,16 @@ if (!$result) {
                             url: 'update_user.php',
                             type: 'POST',
                             data: $(this).serialize(),
+                            dataType: 'json',
                             success: function(response){
-                                alert(response);
-                                location.reload();
+                                alert(response.message);
+                                if(response.status === 'success'){
+                                    $('#editUserModal').hide();
+                                    loadUsers();
+                                }
+                            },
+                            error: function(xhr){
+                                alert(xhr.responseText);
                             }
                         });
                     });
@@ -673,7 +699,12 @@ if (!$result) {
                                             <td>${row.emel}</td>
                                             <td>${row.namaPeranan}</td>
                                             <td>
-                                                <button class='lihat-btn' data-noic='${row.noIC}' data-type='${row.userType}'>
+                                                <button class='lihat-btn' data-noic='${row.noIC}' data-type='${row.userType}' style='                                                            padding:4px 10px;
+                                                            background:#0306a0ff;
+                                                            color:white;
+                                                            border:none;
+                                                            border-radius:5px;
+                                                            cursor:pointer;'>
                                                     Lihat
                                                 </button>
                                             </td>
