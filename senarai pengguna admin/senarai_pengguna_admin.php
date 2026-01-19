@@ -625,6 +625,7 @@ if (!$result) {
                                     $('#modalJabatan').val(data.idJabatan);
                                     $('#modalJawatan').val(data.jawatan);
                                     $('#modalNoOffice').val(data.noOffice);
+                                    $('#modalKatalaluan').val(data.kataLaluan);
 
                                     $('#modalUserType').val(type);
                                     $('#editUserModal').css('display', 'flex');
