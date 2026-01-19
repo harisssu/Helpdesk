@@ -4,13 +4,48 @@ require_once __DIR__ . "/db_connect.php";
 date_default_timezone_set("Asia/Kuala_Lumpur");
 
 $namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
-$perananNama = "Admin"; 
+$perananNama = "Admin";
 
 /**
- * =========================
- * AJAX API (dalam file sama)
- * =========================
+ * Helper: build WHERE + params
+ * (Letak luar supaya boleh guna untuk semua action)
  */
+function buildWhereAndParams($from, $to, $jabatan, $kategori, $status) {
+    $where = array();
+    $types = "";
+    $params = array();
+
+    if ($from !== "") {
+        $where[] = "a.tarikhAduan >= ?";
+        $types .= "s";
+        $params[] = $from;
+    }
+    if ($to !== "") {
+        $where[] = "a.tarikhAduan <= ?";
+        $types .= "s";
+        $params[] = $to;
+    }
+    if ($jabatan !== "" && $jabatan !== "Semua") {
+        $where[] = "j.namaJabatan = ?";
+        $types .= "s";
+        $params[] = $jabatan;
+    }
+    if ($kategori !== "" && $kategori !== "Semua") {
+        $where[] = "a.jenisMasalah = ?";
+        $types .= "s";
+        $params[] = $kategori;
+    }
+    if ($status !== "" && $status !== "Semua") {
+        $where[] = "s.namaStatus = ?";
+        $types .= "s";
+        $params[] = $status;
+    }
+
+    $sqlWhere = count($where) ? ("WHERE " . implode(" AND ", $where)) : "";
+    return array($sqlWhere, $types, $params);
+}
+
+
 if (isset($_GET["api"]) && $_GET["api"] == "1") {
     header("Content-Type: application/json; charset=utf-8");
 
@@ -21,49 +56,7 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
     $kategori = isset($_GET["kategori"]) ? trim($_GET["kategori"]) : "Semua";
     $status   = isset($_GET["status"]) ? trim($_GET["status"]) : "Semua";
 
-    // function build where
-    function buildWhereAndParams($from, $to, $jabatan, $kategori, $status) {
-        $where = array();
-        $types = "";
-        $params = array();
-
-        if ($from !== "") {
-            $where[] = "a.tarikhAduan >= ?";
-            $types .= "s";
-            $params[] = $from;
-        }
-
-        if ($to !== "") {
-            $where[] = "a.tarikhAduan <= ?";
-            $types .= "s";
-            $params[] = $to;
-        }
-
-        if ($jabatan !== "" && $jabatan !== "Semua") {
-            $where[] = "j.namaJabatan = ?";
-            $types .= "s";
-            $params[] = $jabatan;
-        }
-
-        if ($kategori !== "" && $kategori !== "Semua") {
-            $where[] = "a.jenisMasalah = ?";
-            $types .= "s";
-            $params[] = $kategori;
-        }
-
-        if ($status !== "" && $status !== "Semua") {
-            $where[] = "s.namaStatus = ?";
-            $types .= "s";
-            $params[] = $status;
-        }
-
-        $sqlWhere = count($where) ? ("WHERE " . implode(" AND ", $where)) : "";
-        return array($sqlWhere, $types, $params);
-    }
-
-    // ======================
     // 1) Dropdown Jabatan
-    // ======================
     if ($action === "jabatan") {
         $sql = "SELECT namaJabatan FROM jabatan ORDER BY namaJabatan";
         $res = $conn->query($sql);
@@ -78,167 +71,156 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
         exit;
     }
 
-    // ======================
     // 2) Summary chart
-    // ======================
-   if ($action === "summary") {
+    if ($action === "summary") {
 
-    // Tentukan groupBy ikut rule yang Balqis nak (variety)
-    $deptChosen = ($jabatan !== "" && $jabatan !== "Semua");
-    $catChosen  = ($kategori !== "" && $kategori !== "Semua");
-    $stChosen   = ($status !== "" && $status !== "Semua");
+        $deptChosen = ($jabatan !== "" && $jabatan !== "Semua");
+        $catChosen  = ($kategori !== "" && $kategori !== "Semua");
+        $stChosen   = ($status !== "" && $status !== "Semua");
 
-    // Default group
-    $groupBySql = "s.namaStatus";
-    $groupKey   = "status";
-
-    // RULES (ikut request Balqis)
-    if ($deptChosen && !$catChosen && !$stChosen) {
-        // department/all/all -> group by category
-        $groupBySql = "a.jenisMasalah";
-        $groupKey   = "kategori";
-    } elseif ($stChosen && !$deptChosen && !$catChosen) {
-        // status/all/all -> group by department
-        $groupBySql = "j.namaJabatan";
-        $groupKey   = "jabatan";
-    } elseif ($catChosen && !$deptChosen && !$stChosen) {
-        // category/all/all -> group by department
-        $groupBySql = "j.namaJabatan";
-        $groupKey   = "jabatan";
-    } elseif ($deptChosen && $catChosen && !$stChosen) {
-        // department/category/all -> group by status
         $groupBySql = "s.namaStatus";
         $groupKey   = "status";
-    } else {
-        // Lain-lain: group by dimension yang belum dipilih (supaya banyak variasi)
-        if (!$stChosen) {
-            $groupBySql = "s.namaStatus";
-            $groupKey   = "status";
-        } elseif (!$catChosen) {
+
+        if ($deptChosen && !$catChosen && !$stChosen) {
             $groupBySql = "a.jenisMasalah";
             $groupKey   = "kategori";
-        } else {
+        } elseif ($stChosen && !$deptChosen && !$catChosen) {
             $groupBySql = "j.namaJabatan";
             $groupKey   = "jabatan";
-        }
-    }
-
-    list($sqlWhere, $types, $params) = buildWhereAndParams($from, $to, $jabatan, $kategori, $status);
-
-    $sql = "
-        SELECT $groupBySql AS label, COUNT(*) AS total
-        FROM aduan a
-        LEFT JOIN user u ON a.noIC = u.noIC
-        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
-        LEFT JOIN status s ON a.idStatus = s.idStatus
-        $sqlWhere
-        GROUP BY label
-        ORDER BY total DESC
-    ";
-
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        echo json_encode(array("success"=>false, "error"=>"SQL prepare failed: ".$conn->error));
-        exit;
-    }
-
-    if ($types !== "") {
-        $bind = array();
-        $bind[] = $types;
-        for ($i=0; $i<count($params); $i++) $bind[] = &$params[$i];
-        call_user_func_array(array($stmt, "bind_param"), $bind);
-    }
-
-    $stmt->execute();
-    $res = $stmt->get_result();
-
-    $labels = array();
-    $values = array();
-
-    if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $lab = $row["label"];
-            if ($lab === null || $lab === "") $lab = "(Tiada)";
-            $labels[] = $lab;
-            $values[] = (int)$row["total"];
-        }
-    }
-
-    echo json_encode(array(
-        "success" => true,
-        "group"   => $groupKey, // status|kategori|jabatan
-        "labels"  => $labels,
-        "values"  => $values
-    ));
-    exit;
-}
-
-
-    // ======================
-    // 3) Click bar -> details
-    // ======================
-    if ($action === "details") {
-    $group = isset($_GET["group"]) ? $_GET["group"] : "status"; // status|kategori|jabatan
-    $label = isset($_GET["label"]) ? trim($_GET["label"]) : "";
-
-    list($sqlWhere, $types, $params) = buildWhereAndParams($from, $to, $jabatan, $kategori, $status);
-
-    // Tambah condition ikut bar yang diklik
-    if ($label !== "" && $label !== "(Tiada)") {
-        if ($group === "kategori") {
-            $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "a.jenisMasalah = ?";
-        } elseif ($group === "jabatan") {
-            $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "j.namaJabatan = ?";
+        } elseif ($catChosen && !$deptChosen && !$stChosen) {
+            $groupBySql = "j.namaJabatan";
+            $groupKey   = "jabatan";
+        } elseif ($deptChosen && $catChosen && !$stChosen) {
+            $groupBySql = "s.namaStatus";
+            $groupKey   = "status";
         } else {
-            $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "s.namaStatus = ?";
+            if (!$stChosen) {
+                $groupBySql = "s.namaStatus";
+                $groupKey   = "status";
+            } elseif (!$catChosen) {
+                $groupBySql = "a.jenisMasalah";
+                $groupKey   = "kategori";
+            } else {
+                $groupBySql = "j.namaJabatan";
+                $groupKey   = "jabatan";
+            }
         }
-        $types .= "s";
-        $params[] = $label;
-    }
 
-    $sql = "
-        SELECT
-            a.idAduan,
-            u.namaUser AS namaPengadu,
-            a.jenisMasalah,
-            j.namaJabatan AS unit,
-            IFNULL(t.namaTechnician, '-') AS namaTechnician,
-            a.tarikhAduan,
-            s.namaStatus AS status
-        FROM aduan a
-        LEFT JOIN user u ON a.noIC = u.noIC
-        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
-        LEFT JOIN status s ON a.idStatus = s.idStatus
-        LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
-        $sqlWhere
-        ORDER BY a.tarikhAduan DESC, a.idAduan DESC
-        LIMIT 500
-    ";
+        list($sqlWhere, $types, $params) = buildWhereAndParams($from, $to, $jabatan, $kategori, $status);
 
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        echo json_encode(array("success"=>false, "error"=>"SQL prepare failed: ".$conn->error));
+        $sql = "
+            SELECT $groupBySql AS label, COUNT(*) AS total
+            FROM aduan a
+            LEFT JOIN user u ON a.noIC = u.noIC
+            LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+            LEFT JOIN status s ON a.idStatus = s.idStatus
+            $sqlWhere
+            GROUP BY label
+            ORDER BY total DESC
+        ";
+
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            echo json_encode(array("success"=>false, "error"=>"SQL prepare failed: ".$conn->error));
+            exit;
+        }
+
+        if ($types !== "") {
+            $bind = array();
+            $bind[] = $types;
+            for ($i=0; $i<count($params); $i++) $bind[] = &$params[$i];
+            call_user_func_array(array($stmt, "bind_param"), $bind);
+        }
+
+        $stmt->execute();
+        $res = $stmt->get_result();
+
+        $labels = array();
+        $values = array();
+
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $lab = $row["label"];
+                if ($lab === null || $lab === "") $lab = "(Tiada)";
+                $labels[] = $lab;
+                $values[] = (int)$row["total"];
+            }
+        }
+
+        echo json_encode(array(
+            "success" => true,
+            "group"   => $groupKey,
+            "labels"  => $labels,
+            "values"  => $values
+        ));
         exit;
     }
 
-    if ($types !== "") {
-        $bind = array();
-        $bind[] = $types;
-        for ($i=0; $i<count($params); $i++) $bind[] = &$params[$i];
-        call_user_func_array(array($stmt, "bind_param"), $bind);
+    // 3) Click bar -> details
+    if ($action === "details") {
+        $group = isset($_GET["group"]) ? $_GET["group"] : "status";
+        $label = isset($_GET["label"]) ? trim($_GET["label"]) : "";
+
+        list($sqlWhere, $types, $params) = buildWhereAndParams($from, $to, $jabatan, $kategori, $status);
+
+        if ($label !== "" && $label !== "(Tiada)") {
+            if ($group === "kategori") {
+                $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "a.jenisMasalah = ?";
+            } elseif ($group === "jabatan") {
+                $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "j.namaJabatan = ?";
+            } else {
+                $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "s.namaStatus = ?";
+            }
+            $types .= "s";
+            $params[] = $label;
+        }
+
+        $sql = "
+            SELECT
+                a.idAduan,
+                u.namaUser AS namaPengadu,
+                a.jenisMasalah,
+                j.namaJabatan AS unit,
+                IFNULL(t.namaTechnician, '-') AS namaTechnician,
+                a.tarikhAduan,
+                s.namaStatus AS status
+            FROM aduan a
+            LEFT JOIN user u ON a.noIC = u.noIC
+            LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+            LEFT JOIN status s ON a.idStatus = s.idStatus
+            LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
+            $sqlWhere
+            ORDER BY a.tarikhAduan DESC, a.idAduan DESC
+            LIMIT 500
+        ";
+
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            echo json_encode(array("success"=>false, "error"=>"SQL prepare failed: ".$conn->error));
+            exit;
+        }
+
+        if ($types !== "") {
+            $bind = array();
+            $bind[] = $types;
+            for ($i=0; $i<count($params); $i++) $bind[] = &$params[$i];
+            call_user_func_array(array($stmt, "bind_param"), $bind);
+        }
+
+        $stmt->execute();
+        $res = $stmt->get_result();
+
+        $rows = array();
+        if ($res) {
+            while ($r = $res->fetch_assoc()) $rows[] = $r;
+        }
+
+        echo json_encode(array("success"=>true, "rows"=>$rows));
+        exit;
     }
 
-    $stmt->execute();
-    $res = $stmt->get_result();
-
-    $rows = array();
-    if ($res) {
-        while ($r = $res->fetch_assoc()) $rows[] = $r;
-    }
-
-    echo json_encode(array("success"=>true, "rows"=>$rows));
+    echo json_encode(array("success"=>false, "error"=>"Action tidak sah"));
     exit;
-}
 }
 ?>
 <!DOCTYPE html>
@@ -288,6 +270,14 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
     .field label { font-weight:bold; font-size:14px; }
     .field input, .field select { padding:6px; width:170px; }
     .btn { padding:7px 18px; border:none; background:#0306a0ff; color:#fff; font-weight:bold; border-radius:6px; cursor:pointer; }
+
+    .export-row{
+      margin-top: 10px;
+      display:flex;
+      gap: 12px;
+      justify-content: flex-end; /* tukar flex-start kalau nak kiri */
+    }
+
     .chart-wrap { background:#fff; border:2px solid #000; margin-top: 14px; padding: 14px; }
     .hint { margin-top:8px; font-size:13px; color:#222; }
 
@@ -357,19 +347,21 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
         <a href="dashboard_admin.php">Dashboard</a>
         <a href="Senarai_aduan_admin.php">Senarai Aduan</a>
         <a href="Senarai_Pengguna_admin.php">Senarai Pengguna</a>
-        <a href="laporan_statistik_admin.php" class="active">Laporan Statistik</a>
+        <a href="Laporan_statistik_admin.php" class="active">Laporan Statistik</a>
       </div>
 
       <div class="sidebar-logout">
         <form action="logout.php" method="post">
-        <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+          <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+        </form>
       </div>
     </div>
 
     <div class="content">
       <div class="card">
-        <div class="filter-row">
 
+        <!-- ROW 1 -->
+        <div class="filter-row">
           <div class="field">
             <label>From:</label>
             <input type="date" id="from">
@@ -391,10 +383,11 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
             <label>Kategori:</label>
             <select id="kategori">
               <option>Semua</option>
-              <option>Hardware</option>
-              <option>Software</option>
-              <option>Network</option>
+              <option>Komputer</option>
               <option>Printer</option>
+              <option>Software</option>
+              <option>Internet</option>
+              <option>Monitor</option>
               <option>Lain-lain</option>
             </select>
           </div>
@@ -411,13 +404,20 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
           </div>
 
           <button class="btn" id="btnCari" type="button">Cari</button>
-
         </div>
 
+        <!-- ROW 2 -->
+        <div class="export-row">
+          <button class="btn" id="btnPDFChart" type="button">Export PDF</button>
+          <button class="btn" id="btnExcel" type="button">Export Excel</button>
+        </div>
+
+        <!-- CHART -->
         <div class="chart-wrap">
           <canvas id="statChart" height="90"></canvas>
           <div class="hint" id="hintText">Klik bar untuk lihat senarai aduan ikut filter.</div>
         </div>
+
       </div>
     </div>
   </div>
@@ -437,6 +437,7 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
   function qs(id){ return document.getElementById(id); }
@@ -459,7 +460,7 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
   }
 
   async function loadJabatanOptions() {
-    const data = await fetchJSON('laporan_statistik_admin.php?api=1&action=jabatan');
+    const data = await fetchJSON('Laporan_statistik_admin.php?api=1&action=jabatan');
     if (!data.success) return;
     const sel = qs('jabatan');
     sel.innerHTML = '';
@@ -486,7 +487,7 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
       status: f.status
     });
 
-    const data = await fetchJSON('laporan_statistik_admin.php?' + params.toString());
+    const data = await fetchJSON('Laporan_statistik_admin.php?' + params.toString());
     if (!data.success) {
       alert(data.error || 'Gagal load statistik');
       return;
@@ -498,7 +499,6 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
 
   function renderChart(labels, values) {
     const ctx = qs('statChart').getContext('2d');
-
     if (chart) chart.destroy();
 
     chart = new Chart(ctx, {
@@ -523,7 +523,8 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
       }
     });
 
-    qs('hintText').textContent = 'Chart dipaparkan mengikut ' + lastSummary.group + '. Klik bar untuk lihat senarai aduan.';
+    qs('hintText').textContent =
+      'Chart dipaparkan mengikut ' + lastSummary.group + '. Klik bar untuk lihat senarai aduan.';
   }
 
   async function loadDetails(barLabel) {
@@ -540,7 +541,7 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
       status: f.status
     });
 
-    const data = await fetchJSON('laporan_statistik_admin.php?' + params.toString());
+    const data = await fetchJSON('Laporan_statistik_admin.php?' + params.toString());
     if (!data.success) {
       alert(data.error || 'Gagal load butiran');
       return;
@@ -550,37 +551,30 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
     qs('modalTitle').textContent = 'Butiran Aduan (' + title + ')';
 
     const rows = data.rows || [];
-if (!rows.length) {
-  qs('modalContent').innerHTML = '<div class="empty">Tiada data untuk filter ini.</div>';
-} else {
-  let html = '<table><thead><tr>' +
-    '<th>Bil</th>' +
-    '<th>Id Aduan</th>' +
-    '<th>Nama Pengadu</th>' +
-    '<th>Jenis Masalah</th>' +
-    '<th>Unit</th>' +
-    '<th>Nama Technician</th>' +
-    '<th>Tarikh Aduan</th>' +
-    '<th>Status</th>' +
-    '</tr></thead><tbody>';
+    if (!rows.length) {
+      qs('modalContent').innerHTML = '<div class="empty">Tiada data untuk filter ini.</div>';
+    } else {
+      let html = '<table><thead><tr>' +
+        '<th>Bil</th><th>Id Aduan</th><th>Nama Pengadu</th><th>Jenis Masalah</th>' +
+        '<th>Unit</th><th>Nama Technician</th><th>Tarikh Aduan</th><th>Status</th>' +
+        '</tr></thead><tbody>';
 
-  rows.forEach((r, i) => {
-    html += '<tr>' +
-      '<td>' + (i+1) + '</td>' +
-      '<td>' + esc(r.idAduan) + '</td>' +
-      '<td>' + esc(r.namaPengadu) + '</td>' +
-      '<td>' + esc(r.jenisMasalah) + '</td>' +
-      '<td>' + esc(r.unit) + '</td>' +
-      '<td>' + esc(r.namaTechnician) + '</td>' +
-      '<td>' + esc(r.tarikhAduan) + '</td>' +
-      '<td>' + esc(r.status) + '</td>' +
-      '</tr>';
-  });
+      rows.forEach((r, i) => {
+        html += '<tr>' +
+          '<td>' + (i+1) + '</td>' +
+          '<td>' + esc(r.idAduan) + '</td>' +
+          '<td>' + esc(r.namaPengadu) + '</td>' +
+          '<td>' + esc(r.jenisMasalah) + '</td>' +
+          '<td>' + esc(r.unit) + '</td>' +
+          '<td>' + esc(r.namaTechnician) + '</td>' +
+          '<td>' + esc(r.tarikhAduan) + '</td>' +
+          '<td>' + esc(r.status) + '</td>' +
+          '</tr>';
+      });
 
-  html += '</tbody></table>';
-  qs('modalContent').innerHTML = html;
-}
-
+      html += '</tbody></table>';
+      qs('modalContent').innerHTML = html;
+    }
 
     qs('modal').classList.add('show');
   }
@@ -597,7 +591,33 @@ if (!rows.length) {
 
   qs('btnCari').addEventListener('click', loadSummary);
   qs('closeModal').addEventListener('click', () => qs('modal').classList.remove('show'));
-  qs('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') qs('modal').classList.remove('show'); });
+  qs('modal').addEventListener('click', (e) => {
+    if (e.target.id === 'modal') qs('modal').classList.remove('show');
+  });
+
+  // Export Excel (gunakan fail export_excel.php)
+  qs('btnExcel').addEventListener('click', () => {
+    const f = getFilters();
+    const params = new URLSearchParams(f);
+    window.location.href = 'export_excel.php?' + params.toString();
+  });
+
+  // Export PDF (chart sahaja)
+  qs('btnPDFChart').addEventListener('click', () => {
+    if (!chart) {
+      alert("Chart belum ada. Tekan 'Cari' dulu.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    const canvas = document.getElementById('statChart');
+    const imgData = canvas.toDataURL('image/png', 1.0);
+
+    doc.addImage(imgData, 'PNG', 10, 10, 277, 190);
+    doc.save('chart.pdf');
+  });
 
   (async function(){
     await loadJabatanOptions();
@@ -606,7 +626,7 @@ if (!rows.length) {
 
   function confirmLogout() {
     return confirm("Anda Pasti Untuk Log Keluar?");
- }
+  }
 </script>
 
 </body>
