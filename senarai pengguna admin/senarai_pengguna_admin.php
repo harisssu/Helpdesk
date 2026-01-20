@@ -2,18 +2,33 @@
 session_start();
 include "db_connect.php";
 
-$namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
-$perananNama = "Admin"; //
+if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'admin') {
+    header("Location: login.html");
+    exit;
+}
 
-$sql = $sql = "
+$namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
+$perananNama = "Admin";
+
+$jabatanFilter = isset($_GET['jabatan']) ? $_GET['jabatan'] : ''; // untuk selected dropdown (optional)
+
+/* Senarai jabatan untuk dropdown */
+$sqlJabatanList = "SELECT idJabatan, namaJabatan FROM jabatan ORDER BY namaJabatan ASC";
+$resultJabatanList = mysqli_query($conn, $sqlJabatanList);
+if (!$resultJabatanList) {
+    die("SQL Error Jabatan: " . mysqli_error($conn));
+}
+
+/* Default list semua pengguna (first load) */
+$sql = "
 SELECT 
     u.noIC AS noIC,
     u.namaUser AS namaUser,
     u.emel AS emel,
-    j.namaJabatan,
-    u.idJabatan,
-    p.namaPeranan,
-    u.idPeranan,
+    j.namaJabatan AS namaJabatan,
+    u.idJabatan AS idJabatan,
+    p.namaPeranan AS namaPeranan,
+    u.idPeranan AS idPeranan,
     'user' AS userType
 FROM user u
 LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
@@ -22,14 +37,14 @@ LEFT JOIN peranan p ON u.idPeranan = p.idPeranan
 UNION ALL
 
 SELECT 
-    a.noICAdmin,
-    a.namaAdmin,
-    a.emelAdmin,
-    j.namaJabatan,
-    a.idJabatan,
-    p.namaPeranan,
-    a.idPeranan,
-    'admin'
+    a.noICAdmin AS noIC,
+    a.namaAdmin AS namaUser,
+    a.emelAdmin AS emel,
+    j.namaJabatan AS namaJabatan,
+    a.idJabatan AS idJabatan,
+    p.namaPeranan AS namaPeranan,
+    a.idPeranan AS idPeranan,
+    'admin' AS userType
 FROM admin a
 LEFT JOIN jabatan j ON a.idJabatan = j.idJabatan
 LEFT JOIN peranan p ON a.idPeranan = p.idPeranan
@@ -37,14 +52,14 @@ LEFT JOIN peranan p ON a.idPeranan = p.idPeranan
 UNION ALL
 
 SELECT 
-    t.noICTechnician,
-    t.namaTechnician,
-    t.emelTechnician,
-    j.namaJabatan,
-    t.idJabatan,
-    p.namaPeranan,
-    t.idPeranan,
-    'technician'
+    t.noICTechnician AS noIC,
+    t.namaTechnician AS namaUser,
+    t.emelTechnician AS emel,
+    j.namaJabatan AS namaJabatan,
+    t.idJabatan AS idJabatan,
+    p.namaPeranan AS namaPeranan,
+    t.idPeranan AS idPeranan,
+    'technician' AS userType
 FROM technician t
 LEFT JOIN jabatan j ON t.idJabatan = j.idJabatan
 LEFT JOIN peranan p ON t.idPeranan = p.idPeranan
@@ -52,14 +67,14 @@ LEFT JOIN peranan p ON t.idPeranan = p.idPeranan
 UNION ALL
 
 SELECT 
-    k.noICKetua,
-    k.namaKetua,
-    k.emelKetua,
-    j.namaJabatan,
-    k.idJabatan,
-    p.namaPeranan,
-    k.idPeranan,
-    'ketuaunit'
+    k.noICKetua AS noIC,
+    k.namaKetua AS namaUser,
+    k.emelKetua AS emel,
+    j.namaJabatan AS namaJabatan,
+    k.idJabatan AS idJabatan,
+    p.namaPeranan AS namaPeranan,
+    k.idPeranan AS idPeranan,
+    'ketuaunit' AS userType
 FROM ketuaunit k
 LEFT JOIN jabatan j ON k.idJabatan = j.idJabatan
 LEFT JOIN peranan p ON k.idPeranan = p.idPeranan
@@ -72,6 +87,7 @@ if (!$result) {
     die("SQL Error: " . mysqli_error($conn));
 }
 ?>
+
 
 
 
@@ -313,70 +329,18 @@ if (!$result) {
                             <div class="filter-box">
                                 <div class="filter-row">
                                     <label>Jabatan:</label>
-                                        <select id="filterJabatan">
+                                        <select id="filterJabatan" name="jabatan" style="width: 10rem; padding: 0.2rem;">
                                             <option value="">Semua</option>
-                                            <option value="1">Bedah Mulut</option>
-                                            <option value="2">Bilik PA Pengarah</option>
-                                            <option value="3">CSSU</option>
-                                            <option value="4">Daycare</option>
-                                            <option value="5">Dewan Bedah</option>
-                                            <option value="6">Dewan Bersalin</option>
-                                            <option value="7">ENT</option>
-                                            <option value="8">Farmasi Bekalan Wad</option>
-                                            <option value="9">Farmasi DICE</option>
-                                            <option value="10">Farmasi Klinik Pakar</option>
-                                            <option value="11">Farmasi Logistik</option>
-                                            <option value="12">Farmasi Pengeluaran</option>
-                                            <option value="13">Farmasi Wad</option>
-                                            <option value="14">Forensik</option>
-                                            <option value="15">Hemodialisis</option>
-                                            <option value="16">ICU</option>
-                                            <option value="17">Jabatan Dietetik dan Sajian</option>
-                                            <option value="18">Jabatan Pergigian Pediatrik</option>
-                                            <option value="19">Kawalan Infeksi</option>
-                                            <option value="20">Kecemasan</option>
-                                            <option value="21">Klinik Pakar Obstetrik</option>
-                                            <option value="22">Klinik Pakar Ortopedik</option>
-                                            <option value="23">Klinik Pakar Pediatrik</option>
-                                            <option value="24">Klinik Pakar Psikiatri</option>
-                                            <option value="25">Methadone</option>
-                                            <option value="26">MOPD</option>
-                                            <option value="27">Oftalmologi</option>
-                                            <option value="28">Pejabat Pengarah</option>
-                                            <option value="29">Penyeliaan Kejururawatan</option>
-                                            <option value="30">Perpustakaan</option>
-                                            <option value="31">Porter</option>
-                                            <option value="32">SCN/NICU</option>
-                                            <option value="33">SOPD</option>
-                                            <option value="34">Unit Fisioterapi</option>
-                                            <option value="35">Unit Hal Ehwal Islam</option>
-                                            <option value="36">Unit IT</option>
-                                            <option value="37">Unit Kejuruteraan</option>
-                                            <option value="38">Unit Kerja Sosial</option>
-                                            <option value="39">Unit Keselamatan</option>
-                                            <option value="40">Unit Keselamatan dan Kesihatan</option>
-                                            <option value="41">Unit Kewangan dan Hasil</option>
-                                            <option value="42">Unit Khidmat Pengurusan</option>
-                                            <option value="43">Unit Kualiti</option>
-                                            <option value="44">Unit Patologi dan Tabung Darah</option>
-                                            <option value="45">Unit Pembangunan dan Perumahan</option>
-                                            <option value="46">Unit Pemulihan Carakerja</option>
-                                            <option value="47">Unit Pendidikan Kesihatan</option>
-                                            <option value="48">Unit Pengurusan Aset dan Stor</option>
-                                            <option value="49">Unit Perhubungan Awam</option>
-                                            <option value="50">Unit Psikologi</option>
-                                            <option value="51">Unit Radiologi</option>
-                                            <option value="52">Unit Rekod Perubatan</option>
-                                            <option value="53">Unit Sumber Manusia</option>
-                                            <option value="54">Wad 10</option>
-                                            <option value="55">Wad 2</option>
-                                            <option value="56">Wad 3</option>
-                                            <option value="57">Wad 4</option>
-                                            <option value="58">Wad 5</option>
-                                            <option value="59">Wad 6</option>
-                                            <option value="60">Wad 8</option>
-                                            <option value="61">Wad 9</option>
+
+                                            <?php while($j = mysqli_fetch_assoc($resultJabatanList)) : ?>
+                                                <option value="<?= $j['idJabatan']; ?>"
+                                                    <?= ($jabatanFilter == $j['idJabatan']) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($j['namaJabatan']); ?>
+                                                </option>
+                                            <?php endwhile; ?>
                                         </select>
+
+
                                     <input type="text" id="searchName" placeholder="Search Nama Pengguna...">
                                     <button id="btnSearch">Cari</button>
 
@@ -421,6 +385,7 @@ if (!$result) {
                                 }
                                 ?>
                                 </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -590,11 +555,15 @@ if (!$result) {
 
 
                     $(document).ready(function () {
-                        $('#jenis_masalah').select2({
-                            placeholder: "-- Pilih --",
-                            allowClear: true
-                        });
+                    $('#filterJabatan').select2({
+                        placeholder: "Semua Jabatan",
+                        allowClear: true,
+                        width: '10rem'
                     });
+
+                    loadUsers();
+                });
+
 
                     function confirmLogout() {
                         return confirm("Anda Pasti Untuk Log Keluar?");
