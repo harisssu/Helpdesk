@@ -12,14 +12,18 @@ $namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
 $idJabatan = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
 $perananNama = "Ketua Unit";
 
-$jabatanNama = "Unknown";
-if ($idJabatan != '') {
-    $sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
-    $resultJabatan = mysqli_query($conn, $sqlJabatan);
-    if ($row = mysqli_fetch_assoc($resultJabatan)) {
-        $jabatanNama = $row['namaJabatan'];
-    }
+$noIC = $_SESSION['noIC'];
+
+$sqlGetJabatan = "SELECT idJabatan FROM ketuaunit WHERE noICKetua = '$noIC'";
+$resultJabatan = mysqli_query($conn, $sqlGetJabatan);
+
+if (!$resultJabatan || mysqli_num_rows($resultJabatan) == 0) {
+    die("Ralat: Ketua unit tidak mempunyai jabatan.");
 }
+
+$rowJabatan = mysqli_fetch_assoc($resultJabatan);
+$idJabatan = $rowJabatan['idJabatan'];
+
 $sql = "
 SELECT 
     a.idAduan,
@@ -27,14 +31,25 @@ SELECT
     a.masaAduan,
     a.lokasi,
     a.jenisMasalah,
-    '-' AS namaTechnician,
+
+    COALESCE(u.namaUser, k.namaKetua, '-') AS namaPengadu,
+    COALESCE(t.namaTechnician, '-') AS namaTechnician,
+
     s.namaStatus
 FROM aduan a
-JOIN user u ON a.noIC = u.noIC
 JOIN status s ON a.idStatus = s.idStatus
-WHERE u.idJabatan = '$idJabatan'
+
+LEFT JOIN user u ON a.noIC = u.noIC
+LEFT JOIN ketuaunit k ON a.noICKetua = k.noICKetua
+
+LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
+
+WHERE 
+    (u.idJabatan = '$idJabatan' OR k.idJabatan = '$idJabatan')
 ORDER BY a.tarikhAduan DESC, a.masaAduan DESC
 ";
+
+
 
 
 $result = mysqli_query($conn, $sql);
@@ -232,34 +247,36 @@ body {
         <div class="content">
             <table class="aduan-table">
                 <thead>
-                    <tr>
-                        <th>Bil</th>
-                        <th>Tarikh dan Masa Aduan</th>
-                        <th>Lokasi</th>
-                        <th>Jenis Masalah</th>
-                        <th>Nama Technician</th>
-                        <th>Tarikh dan Masa Kemaskini</th>
-                        <th>Status</th>
-                    </tr>
+                <tr>
+                    <th>Bil</th>
+                    <th>Nama Pengadu</th>
+                    <th>Tarikh dan Masa Aduan</th>
+                    <th>Lokasi</th>
+                    <th>Jenis Masalah</th>
+                    <th>Nama Technician</th>
+                    <th>Tarikh dan Masa Kemaskini</th>
+                    <th>Status</th>
+                </tr>
                 </thead>
                 <tbody>
                     <?php
                     $bil = 1;
                     if (mysqli_num_rows($result) > 0) {
                         while ($row = mysqli_fetch_assoc($result)) {
-                            echo "<tr>";
-                            echo "<td>".$bil++."</td>";
-                            echo "<td>".htmlspecialchars($row['tarikhMasaAduan'])."</td>";
-                            echo "<td>".htmlspecialchars($row['lokasi'])."</td>";
-                            echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
-                            echo "<td>".htmlspecialchars(isset($row['namaTechnician']) ? $row['namaTechnician'] : '-')."</td>";
-                            echo "<td>".htmlspecialchars(isset($row['tarikhMasaKemaskini']) ? $row['tarikhMasaKemaskini'] : '-')."</td>";
+                       echo "<tr>";
+                        echo "<td>".$bil++."</td>";
+                        echo "<td>".htmlspecialchars($row['namaPengadu'])."</td>";
+                        echo "<td>".date('d/m/Y', strtotime($row['tarikhAduan']))." ".$row['masaAduan']."</td>";
+                        echo "<td>".htmlspecialchars($row['lokasi'])."</td>";
+                        echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
+                        echo "<td>".htmlspecialchars($row['namaTechnician'])."</td>";
+                        echo "<td>-</td>";
+                        echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
+                        echo "</tr>";
 
-                            echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
-                            echo "</tr>";
                         }
                     } else {
-                        echo "<tr><td colspan='7'>Tiada aduan direkodkan untuk unit anda</td></tr>";
+                        echo "<tr><td colspan='8'>Tiada aduan direkodkan untuk unit anda</td></tr>";
                     }
                     ?>
                 </tbody>
