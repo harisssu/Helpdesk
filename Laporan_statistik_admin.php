@@ -25,11 +25,14 @@ function buildWhereAndParams($from, $to, $jabatan, $kategori, $status) {
         $types .= "s";
         $params[] = $to;
     }
+
+    // ✅ Jabatan: support user + ketua unit
     if ($jabatan !== "" && $jabatan !== "Semua") {
-        $where[] = "j.namaJabatan = ?";
+        $where[] = "COALESCE(ju.namaJabatan, jk.namaJabatan) = ?";
         $types .= "s";
         $params[] = $jabatan;
     }
+
     if ($kategori !== "" && $kategori !== "Semua") {
         $where[] = "a.jenisMasalah = ?";
         $types .= "s";
@@ -85,10 +88,10 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
             $groupBySql = "a.jenisMasalah";
             $groupKey   = "kategori";
         } elseif ($stChosen && !$deptChosen && !$catChosen) {
-            $groupBySql = "j.namaJabatan";
+            $groupBySql = "COALESCE(ju.namaJabatan, jk.namaJabatan)";
             $groupKey   = "jabatan";
         } elseif ($catChosen && !$deptChosen && !$stChosen) {
-            $groupBySql = "j.namaJabatan";
+            $groupBySql = "COALESCE(ju.namaJabatan, jk.namaJabatan)";
             $groupKey   = "jabatan";
         } elseif ($deptChosen && $catChosen && !$stChosen) {
             $groupBySql = "s.namaStatus";
@@ -101,7 +104,7 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
                 $groupBySql = "a.jenisMasalah";
                 $groupKey   = "kategori";
             } else {
-                $groupBySql = "j.namaJabatan";
+                $groupBySql = "COALESCE(ju.namaJabatan, jk.namaJabatan)";
                 $groupKey   = "jabatan";
             }
         }
@@ -109,15 +112,20 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
         list($sqlWhere, $types, $params) = buildWhereAndParams($from, $to, $jabatan, $kategori, $status);
 
         $sql = "
-            SELECT $groupBySql AS label, COUNT(*) AS total
-            FROM aduan a
-            LEFT JOIN user u ON a.noIC = u.noIC
-            LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
-            LEFT JOIN status s ON a.idStatus = s.idStatus
-            $sqlWhere
-            GROUP BY label
-            ORDER BY total DESC
-        ";
+    SELECT $groupBySql AS label, COUNT(*) AS total
+    FROM aduan a
+    LEFT JOIN user u ON a.noIC = u.noIC
+    LEFT JOIN jabatan ju ON u.idJabatan = ju.idJabatan
+
+    LEFT JOIN ketuaunit k ON a.noICKetua = k.noICKetua
+    LEFT JOIN jabatan jk ON k.idJabatan = jk.idJabatan
+
+    LEFT JOIN status s ON a.idStatus = s.idStatus
+    $sqlWhere
+    GROUP BY label
+    ORDER BY total DESC
+";
+
 
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
@@ -167,7 +175,7 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
             if ($group === "kategori") {
                 $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "a.jenisMasalah = ?";
             } elseif ($group === "jabatan") {
-                $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "j.namaJabatan = ?";
+                 $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "COALESCE(ju.namaJabatan, jk.namaJabatan) = ?";
             } else {
                 $sqlWhere .= ($sqlWhere ? " AND " : "WHERE ") . "s.namaStatus = ?";
             }
@@ -176,23 +184,30 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
         }
 
         $sql = "
-            SELECT
-                a.idAduan,
-                u.namaUser AS namaPengadu,
-                a.jenisMasalah,
-                j.namaJabatan AS unit,
-                IFNULL(t.namaTechnician, '-') AS namaTechnician,
-                a.tarikhAduan,
-                s.namaStatus AS status
-            FROM aduan a
-            LEFT JOIN user u ON a.noIC = u.noIC
-            LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
-            LEFT JOIN status s ON a.idStatus = s.idStatus
-            LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
-            $sqlWhere
-            ORDER BY a.tarikhAduan DESC, a.idAduan DESC
-            LIMIT 500
-        ";
+    SELECT
+        a.idAduan,
+        COALESCE(u.namaUser, k.namaKetua, '-') AS namaPengadu,
+        a.jenisMasalah,
+        COALESCE(ju.namaJabatan, jk.namaJabatan, '-') AS unit,
+        IFNULL(t.namaTechnician, '-') AS namaTechnician,
+        a.tarikhAduan,
+        s.namaStatus AS status
+    FROM aduan a
+
+    LEFT JOIN user u ON a.noIC = u.noIC
+    LEFT JOIN jabatan ju ON u.idJabatan = ju.idJabatan
+
+    LEFT JOIN ketuaunit k ON a.noICKetua = k.noICKetua
+    LEFT JOIN jabatan jk ON k.idJabatan = jk.idJabatan
+
+    LEFT JOIN status s ON a.idStatus = s.idStatus
+    LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
+
+    $sqlWhere
+    ORDER BY a.tarikhAduan DESC, a.idAduan DESC
+    LIMIT 500
+";
+
 
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
@@ -257,10 +272,10 @@ if (isset($_GET["api"]) && $_GET["api"] == "1") {
     .menu { flex:1; }
     .menu a { display:block; padding:15px 18px; text-decoration:none; color:#000; border-bottom:1px solid #000; }
     .menu a:hover { background:#d9d9d9; }
-    .menu a.active { color:#1e40ff; font-weight:bold; }
+    .menu a.active { color: #1e40ff; font-weight:bold; }
 
-    .sidebar-logout { padding:15px; }
-    .logout-btn { width:100%; padding:8px 0; border:none; border-radius:8px; background:#0306a0ff; color:#fff; font-weight:bold; cursor:pointer; }
+    .sidebar-logout { padding:15px; margin-top: auto; }
+    .logout-btn { width:100%; padding:8px; border:none; border-radius:8px; background:#0306a0ff; color:#fff; font-weight:bold; cursor:pointer; }
 
     .content { flex:1; padding:30px; overflow:auto; }
 
