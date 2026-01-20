@@ -22,15 +22,27 @@ if ($idJabatan != '') {
 
 $sql = "SELECT 
             a.idAduan,
-            u.namaUser,
-            j.namaJabatan,
+
+            /* Nama pengadu: user atau ketuaunit */
+            COALESCE(u.namaUser, k.namaKetua) AS namaPengadu,
+
+            /* Unit: ikut pengadu yang wujud */
+            COALESCE(ju.namaJabatan, jk.namaJabatan) AS namaJabatan,
+
             a.jenisMasalah,
             a.tarikhAduan,
             s.namaStatus,
-            t.namaTechnician
+
+            /* Technician boleh kosong */
+            COALESCE(t.namaTechnician, '-') AS namaTechnician
+
         FROM aduan a
         LEFT JOIN user u ON a.noIC = u.noIC
-        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+        LEFT JOIN jabatan ju ON u.idJabatan = ju.idJabatan
+
+        LEFT JOIN ketuaunit k ON a.noICKetua = k.noICKetua
+        LEFT JOIN jabatan jk ON k.idJabatan = jk.idJabatan
+
         LEFT JOIN status s ON a.idStatus = s.idStatus
         LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
         ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
@@ -65,7 +77,6 @@ if (!$result) {
         .topbar .system { font-weight: bold; color: #fff; margin-right: 35px; font-size: 30px; }
         .topbar .page-title { font-weight: bold; color: #fff; margin-left:30px; font-size: 25px; }
         .layout { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 240px; background: #e6e6e6; flex-shrink: 0; display: flex; flex-direction: column; }
         .user-info { display: flex; align-items: center; gap: 20px; padding: 20px; border-bottom: 1px solid #000; }
         .user-info img { width: 40px; height: 40px; border-radius: 50%; }
         .menu a { display: block; padding: 15px 18px; text-decoration: none; color: #000; border-bottom: 1px solid #000; }
@@ -75,8 +86,10 @@ if (!$result) {
         .aduan-table { width: 100%; border-collapse: collapse; background: #fff; }
         .aduan-table th, .aduan-table td { border: 1px solid #000; padding: 10px; text-align: center; }
         .aduan-table th { background: #e6e6e6; font-weight: bold; }
-        .sidebar-logout { padding: 15px; }
-        .logout-btn { width: 100%; padding: 8px 0; border: none; border-radius: 8px; background: #0306a0ff; color: #fff; font-weight: bold; cursor: pointer; }
+        .sidebar{ width:240px; background:#e6e6e6; flex-shrink:0; display:flex; flex-direction:column;}
+        .menu{ flex:1; }
+        .sidebar-logout{ padding:15px;margin-top:auto;}
+        .logout-btn { width:100%; padding:8px; border:none; border-radius:8px; background:#0306a0ff; color:#fff; font-weight:bold; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -135,7 +148,7 @@ if (!$result) {
                             echo "<tr>";
                             echo "<td>".$bil++."</td>";
                             echo "<td>".htmlspecialchars($row['idAduan'])."</td>";
-                            echo "<td>".htmlspecialchars($row['namaUser'])."</td>";
+                            echo "<td>".htmlspecialchars($row['namaPengadu'])."</td>";
                             echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
                             echo "<td>".htmlspecialchars($row['namaJabatan'])."</td>";
                             echo "<td>".htmlspecialchars($row['namaTechnician'])."</td>";
