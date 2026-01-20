@@ -13,7 +13,6 @@ $perananNama = "Pengguna";
 $namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
 $idJabatan = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
 
-
 $jabatanNama = "Unknown";
 if ($idJabatan != '') {
     $sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
@@ -23,68 +22,85 @@ if ($idJabatan != '') {
     }
 }
 
-
-
-
 $tarikhAduan = date("Y-m-d");
 $masaAduan   = date("H:i:s");
-$namaStatus = "Pending";
 $attachment = "";
 $msg = "";
 
+/** ✅ Declare technician-related fields supaya tak undefined */
+$notaTechnician = "";
+$attachmentTechnician = "";
+$tarikhmasaSiap = NULL;      // datetime null
+$noICTechnician = NULL;      // FK null (technician belum assign)
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($_POST['lokasi']) || empty($_POST['jenis_masalah'])) {
-    $msg = "Sila lengkapkan Lokasi dan Jenis Masalah.";
-} else {
+        $msg = "Sila lengkapkan Lokasi dan Jenis Masalah.";
+    } else {
 
+        $lokasi = mysqli_real_escape_string($conn, $_POST['lokasi']);
+        $jenisMasalah = mysqli_real_escape_string($conn, $_POST['jenis_masalah']);
+        $penerangan = mysqli_real_escape_string($conn, $_POST['penerangan']);
 
-    $lokasi = mysqli_real_escape_string($conn, $_POST['lokasi']);
-    $jenisMasalah = mysqli_real_escape_string($conn, $_POST['jenis_masalah']);
-    $penerangan = mysqli_real_escape_string($conn, $_POST['penerangan']);
+        // Handle optional file upload
+        if (!empty($_FILES['attachment']['name'])) {
+            $filename = basename($_FILES['attachment']['name']);
+            $target = "uploads/" . $filename;
+            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $target)) {
+                $attachment = $filename;
+            }
+        }
 
-    // Handle optional file upload
-    if (!empty($_FILES['attachment']['name'])) {
-        $filename = basename($_FILES['attachment']['name']);
-        $target = "uploads/" . $filename;
-        if (move_uploaded_file($_FILES['attachment']['tmp_name'], $target)) {
-            $attachment = $filename;
+        $tarikhAduan = date("Y-m-d");
+        $masaAduan = date("H:i:s");
+
+        /**
+         * ✅ INSERT yang betul
+         * - Letak koma yang cukup
+         * - NULL tanpa quote
+         * - noICKetua set NULL untuk user (Option 3)
+         */
+        $sql = "INSERT INTO aduan (
+            jenisMasalah,
+            tarikhAduan,
+            noIC,
+            noICKetua,
+            lokasi,
+            masaAduan,
+            peneranganMasalah,
+            attachment,
+            idStatus,
+            notaTechnician,
+            attachmentTechnician,
+            tarikhmasaSiap,
+            noICTechnician
+        ) VALUES (
+            '$jenisMasalah',
+            '$tarikhAduan',
+            '$noIC',
+            NULL,
+            '$lokasi',
+            '$masaAduan',
+            '$penerangan',
+            '$attachment',
+            1,
+            '$notaTechnician',
+            '$attachmentTechnician',
+            NULL,
+            NULL
+        )";
+
+        if (mysqli_query($conn, $sql)) {
+            header("Location: Status_Aduan_User.php");
+            exit;
+        } else {
+            echo "Gagal hantar aduan: " . mysqli_error($conn) . "<br><pre>$sql</pre>";
         }
     }
-
-    $sql = "INSERT INTO aduan 
-(
-    jenisMasalah,
-    tarikhAduan,
-    noIC,
-    lokasi,
-    masaAduan,
-    peneranganMasalah,
-    attachment,
-    idStatus
-)
-VALUES
-(
-    '$jenisMasalah',
-    '$tarikhAduan',
-    '$noIC',
-    '$lokasi',
-    '$masaAduan',
-    '$penerangan',
-    '$attachment',
-    1
-)";
-
-    if (mysqli_query($conn, $sql)) {
-        header("Location: Status_Aduan_User.php");
-        exit;
-    } else {
-        echo "Gagal hantar aduan: " . mysqli_error($conn);
-    }
-  }
 }
 ?>
+
 
 
 
