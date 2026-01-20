@@ -61,12 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $tarikhAduan = date("Y-m-d");
         $masaAduan = date("H:i:s");
-
-        $sql = "INSERT INTO aduan 
+            $sql = "INSERT INTO aduan 
             (
                 jenisMasalah,
                 tarikhAduan,
                 noIC,
+                noICKetua,
                 lokasi,
                 masaAduan,
                 peneranganMasalah,
@@ -77,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (
                 '$jenisMasalah',
                 '$tarikhAduan',
+                NULL,
                 '$noIC',
                 '$lokasi',
                 '$masaAduan',
@@ -84,8 +85,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 '$attachment',
                 1
             )";
+
          if (mysqli_query($conn, $sql)) {
-        header("Location: Status_Aduan_User.php");
+        header("Location: ketuaunitdashboard.php");
         exit;
     } else {
         echo "Gagal hantar aduan: " . mysqli_error($conn);
