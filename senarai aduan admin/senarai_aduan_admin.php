@@ -18,19 +18,31 @@ $jabatanFilter = isset($_GET['jabatan']) ? $_GET['jabatan'] : '';
 
 $sql = "SELECT 
             a.idAduan,
-            u.namaUser,
-            j.namaJabatan,
+
+            /* Nama pengadu: user atau ketuaunit */
+            COALESCE(u.namaUser, k.namaKetua, '-') AS namaPengadu,
+
+            /* Unit/Jabatan ikut siapa yang wujud */
+            COALESCE(ju.namaJabatan, jk.namaJabatan, '-') AS namaJabatan,
+
             a.jenisMasalah,
             a.tarikhAduan,
             s.namaStatus,
             a.idStatus,
-            t.namaTechnician
+
+            COALESCE(t.namaTechnician, '-') AS namaTechnician
+
         FROM aduan a
         LEFT JOIN user u ON a.noIC = u.noIC
-        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+        LEFT JOIN jabatan ju ON u.idJabatan = ju.idJabatan
+
+        LEFT JOIN ketuaunit k ON a.noICKetua = k.noICKetua
+        LEFT JOIN jabatan jk ON k.idJabatan = jk.idJabatan
+
         LEFT JOIN status s ON a.idStatus = s.idStatus
         LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
         WHERE 1=1";
+
 
 if ($statusFilter !== '') {
     $sql .= " AND a.idStatus = '".intval($statusFilter)."'";
@@ -45,8 +57,10 @@ if ($fromDate !== '' && $toDate !== '') {
 }   
 
 if ($jabatanFilter !== '') {
-    $sql .= " AND j.namaJabatan = '".mysqli_real_escape_string($conn, $jabatanFilter)."'";
+    $jabatanFilterEsc = mysqli_real_escape_string($conn, $jabatanFilter);
+    $sql .= " AND (ju.namaJabatan = '$jabatanFilterEsc' OR jk.namaJabatan = '$jabatanFilterEsc')";
 }
+
 
 $sql .= " ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
 
@@ -182,27 +196,25 @@ if (!$result) {
                 font-size: 0.9rem;
             }
 
-            .sidebar {
-                width: 240px;
-                background: #e6e6e6;
-                border-right: none;
-                flex-shrink: 0;
+           .sidebar{
+            width:240px;
+            background:#e6e6e6;
+            flex-shrink:0;
+            display:flex;
+            flex-direction:column;
+}
 
-                display: flex;
-                flex-direction: column;
-            }
+            .menu{ flex:1; }
 
-            .menu {
-                flex: 1; /
+            .sidebar-logout{
+            padding:15px;
+            margin-top:auto;
             }
-
-            .sidebar-logout {
-                padding: 15px;
-            }
+    
 
             .logout-btn {
                 width: 100%;
-                padding: 8px 0;
+                padding: 8px;
                 border: none;
                 border-radius: 8px;
                 background: #0306a0ff;
@@ -400,9 +412,9 @@ if (!$result) {
                                         echo "<tr>
                                                 <td>{$bil}</td>
                                                 <td>{$row['idAduan']}</td>
-                                                <td>{$row['namaUser']}</td>
+                                                <td>".htmlspecialchars($row['namaPengadu'])."</td>
                                                 <td>{$row['jenisMasalah']}</td>
-                                                <td>{$row['namaJabatan']}</td>
+                                                <td>".htmlspecialchars($row['namaJabatan'])."</td>
                                                 <td>{$row['namaTechnician']}</td>
                                                 <td>{$row['tarikhAduan']}</td>
                                                 <td>{$status}</td>
@@ -469,8 +481,8 @@ if (!$result) {
                         $('#m_jenisMasalah').text(data.jenisMasalah);
                         $('#m_tarikhAduan').text(data.tarikhAduan);
                         $('#m_masaAduan').text(data.masaAduan);
-                        $('#m_namaUser').text(data.namaUser);
-                        $('#m_noIC').text(data.noIC);
+                        $('#m_namaUser').text(data.namaPengadu);
+                        $('#m_noIC').text(data.noIC ? data.noIC : data.noICKetua);
                         $('#m_lokasi').text(data.lokasi);
                         $('#m_peneranganMasalah').text(data.peneranganMasalah);
                         $('#m_idStatus').text(data.idStatus);
