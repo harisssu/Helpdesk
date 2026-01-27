@@ -1,5 +1,81 @@
 <?php
-$aduanId = $_GET['id'] ?? 'Unknown'; // get the ID from URL
+session_start();
+include "db_connect.php";
+
+// Ensure the technician is logged in and has the correct role
+if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'technician') {
+    header("Location: login.html");
+    exit;
+}
+// Ensure session variables are available
+$namaUser = $_SESSION['nama'] ?? 'Unknown'; // Fallback if not set
+$perananNama = $_SESSION['role'] ?? 'Technician'; // Fallback if not set
+
+// Get the complaint ID from the URL
+$aduanId = $_GET['idAduan'] ?? null;  // Get the idAduan from the URL
+
+// Check if the ID is valid
+if (!$aduanId) {
+    die("Complaint ID is missing or invalid.");
+}
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch complaint data from the database
+$sql = "SELECT 
+            a.idAduan,
+            a.peneranganMasalah,
+            a.idStatus,
+            a.attachment,
+            a.tarikhAduan,
+            a.masaAduan,
+            a.notaTechnician,
+            a.attachmentTechnician
+        FROM aduan a
+        WHERE a.idAduan = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $aduanId);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();  // Fetch the data for this specific complaint
+} else {
+    die("Complaint not found.");
+}
+
+if (isset($_POST['submitData'])) {
+
+    // Retrieve the technician's note from the form
+    $notaTechnician = $_POST['notaTechnician'];
+
+    // Update the Technician's Note in the database
+    $updateSql = "UPDATE aduan 
+                  SET notaTechnician = ? 
+                  WHERE idAduan = ?";
+    $updateStmt = $conn->prepare($updateSql);
+    $updateStmt->bind_param("si", $notaTechnician, $aduanId);  // Binding parameters
+    $updateStmt->execute();
+
+    // Check if the update was successful
+    if ($updateStmt->affected_rows > 0) {
+        echo "<script>alert('Technician\'s note updated successfully');</script>";
+    } else {
+        echo "<script>alert('Failed to update the technician\'s note');</script>";
+    }
+
+    // Close the prepared statement
+    $updateStmt->close();
+}
+
+// Fetch status options (excluding 'Baru')
+$statusSql = "SELECT idStatus, namaStatus FROM status WHERE idStatus != 1";
+$statusResult = $conn->query($statusSql);
+
+// Close the statement
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -8,10 +84,9 @@ $aduanId = $_GET['id'] ?? 'Unknown'; // get the ID from URL
     <meta charset="UTF-8">
     <title>e-ICT Aduan - Detail Aduan</title>
     <style>
-        /* BODY + APP */
         body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
+            font-family: 'Arial', sans-serif;           /*set the font style of all text*/
+            margin: 0;                                  /*make bg touch edges of screen*/
             height: 100vh;
             display: flex;
             justify-content: center;
@@ -20,97 +95,132 @@ $aduanId = $_GET['id'] ?? 'Unknown'; // get the ID from URL
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-attachment: fixed;               /*bg stays still while scrolling*/
             position: relative;
-            overflow: hidden;
-        }
+            overflow: hidden;                           /*hide anythings outside the screen, prevent unwanted scrollbars*/
+            }
+            
+            .app {
+            width: 100%;                /*make element take 100% of screen width*/
+            height: 100vh;              /*make element as tall as screen height (viewpoint height)*/
+            display: flex;              /*allows easy layout control*/
+            flex-direction: column;     /*arrange items top to bottom*/
+            background: transparent;    /*bg is see-through*/
+            }
 
-        .app {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: transparent;
-        }
-
-        /* TOPBAR */
-        .topbar {
+            .topbar {
             height: 50px;
             background: #58385eff;
             display: flex;
             align-items: center;
             padding: 0 20px;
+            border-bottom: none;
             flex-shrink: 0;
-        }
+            }
 
-        .topbar .system {
+            .topbar .system {       /*e-ICT Aduan*/
             font-weight: bold;
             color: #fff;
             margin-right: 35px;
             font-size: 30px;
-        }
+            }
 
-        .topbar .page-title {
+            .topbar .page-title {   /*Senarai Aduan*/
             font-weight: bold;
             color: #ffffffff;
-            margin-left: 30px;
+            margin-left:30px; 
             font-size: 25px;
-        }
+            }
 
-        /* LAYOUT */
-        .layout {
+            .layout {
             display: flex;
             flex: 1;
             overflow: hidden;
-        }
+            }
 
-        /* SIDEBAR */
-        .sidebar {
+            .sidebar {
             width: 240px;
             background: #e6e6e6;
+            border-right: none;
             flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-        }
+            }
 
-        .user-info {
+            .user-info {
             display: flex;
             align-items: center;
             gap: 20px;
             padding: 20px;
             border-bottom: 1px solid #000;
-        }
+            }
 
-        .user-info img {
+            .user-info img {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-        }
+            }
 
-        .menu a {
+            .menu a {
             display: block;
             padding: 15px 18px;
             text-decoration: none;
             color: #000;
             border-bottom: 1px solid #000;
-        }
+            }
 
-        .menu a:hover {
+            .menu a:hover {
             background: #d9d9d9;
-        }
+            }
 
-        .menu a.active {
+            .menu a.active {
             color: #1e40ff;
             font-weight: bold;
             background: transparent;
-        }
+            }
 
-        .sidebar-logout {
+            .content {
+            flex: 1;
+            padding: 30px;
+            background:transparent;
+            overflow: auto;
+            }
+
+            .aduan-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            }
+
+            .aduan-table th,            /*table header cell. titles at the top of table. comma (,) means apply the same style to both th td*/
+            .aduan-table td {           /*table data cell. normal cells inside table rows*/
+            border: 1px solid #000;   /*black border around evey cell*/
+            padding: 10px;              /*spcae inside each cell*/
+            text-align: center;         /*text is centered*/
+            }
+
+            .aduan-table th {
+            background: #e6e6e6;
+            font-weight: bold;
+            }
+
+            .sidebar {
+            width: 240px;
+            background: #e6e6e6;
+            border-right: none;
+            flex-shrink: 0;
+
+            display: flex;
+            flex-direction: column;
+            }
+
+            .menu {
+            flex: 1; /
+            }
+
+            .sidebar-logout {
             padding: 15px;
-            margin-top: auto;  /* This pushes it to the bottom */
-        }
+            }
 
-        .logout-btn {
+            .logout-btn {
             width: 100%;
             padding: 8px 0;
             border: none;
@@ -119,91 +229,7 @@ $aduanId = $_GET['id'] ?? 'Unknown'; // get the ID from URL
             color: #fff;
             font-weight: bold;
             cursor: pointer;
-        }
-
-        /* CONTENT AREA */
-        .content {
-            flex: 1;
-            padding: 30px;
-            background: transparent;
-            overflow: auto;
-        }
-
-        /* DETAIL ADUAN BOX */
-        .aduan-detail {
-            width: 700px;
-            background-color: #d9d9d9;
-            padding: 20px;
-            border: 1px solid #000;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            margin: 0 auto; /* center box */
-        }
-
-        .aduan-detail h2 {
-            margin-top: 0;
-            font-size: 16px;
-            font-weight: bold;
-            border-bottom: 1px solid #000;
-            padding-bottom: 5px;
-            margin-bottom: 20px;
-        }
-
-        .form-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .form-row label {
-            width: 180px;
-            font-weight: bold;
-        }
-
-        .form-row input[type="text"],
-        .form-row select,
-        .form-row input[type="date"],
-        .form-row textarea {
-            flex: 1;
-            padding: 5px 8px;
-            border: 1px solid #999;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .form-row textarea {
-            height: 60px;
-            resize: none;
-        }
-
-        .file-input-wrapper {
-            display: flex;
-            align-items: center;
-        }
-
-        .file-input-wrapper input[type="file"] {
-            flex: 1;
-        }
-
-        .file-input-wrapper button {
-            margin-left: 10px;
-            padding: 5px 8px;
-            background-color: #a94442;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .submit-btn {
-            margin-left: 180px;
-            padding: 8px 15px;
-            background-color: #fff;
-            border: 1px solid #000;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
+            }
     </style>
 </head>
 <body>
@@ -211,7 +237,7 @@ $aduanId = $_GET['id'] ?? 'Unknown'; // get the ID from URL
         <!-- TOPBAR -->
         <div class="topbar">
             <div class="system">e-ICT Aduan</div>
-            <div class="page-title">Senarai Aduan</div>
+            <div class="page-title">Detail Aduan</div>
         </div>
 
         <!-- MAIN LAYOUT -->
@@ -221,92 +247,90 @@ $aduanId = $_GET['id'] ?? 'Unknown'; // get the ID from URL
                 <div class="user-info">
                     <img src="profile.jpg" alt="User">
                     <div>
-                        <strong>Fuyu</strong><br>
-                        <small>Technician</small>
+                        <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                        <small><?= htmlspecialchars($perananNama); ?></small>
                     </div>
                 </div>
 
-                <?php $currentPage = 'detail'; ?>
                 <div class="menu">
-                    <a href="Senarai_Aduan_Technician.php" class="<?php if($currentPage=='list') echo 'active'; ?>">Senarai Aduan</a>
+                    <a href="Senarai_Aduan_Technician.php">Senarai Aduan</a>
                 </div>
 
                 <div class="sidebar-logout">
-                    <button class="logout-btn">Logout</button>
+                    <form action="logout.php" method="post">
+                        <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+                    </form>
                 </div>
             </div>
+            <script>
+                function confirmLogout() {
+                    return confirm("Anda Pasti Untuk Log Keluar?");
+                }
+            </script>
 
             <!-- CONTENT AREA -->
             <div class="content">
                 <div class="aduan-detail">
-                    <h2>DETAIL ADUAN (ID)</h2>
-                    <form>
+                    <h2>DETAIL ADUAN (ID: <?= htmlspecialchars($aduanId); ?>)</h2>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="idAduan" value="<?= $aduanId; ?>">
+                        <!-- ID Aduan (read-only) -->
                         <div class="form-row">
-                            <label for="jenisMasalah">Jenis Masalah :</label>
-                            <input type="text" id="jenisMasalah" value="Komputer" readonly>
+                            <label for="idAduan">ID Aduan:</label>
+                            <input type="text" id="idAduan" value="<?= htmlspecialchars($row['idAduan']); ?>" readonly>
                         </div>
 
+                        <!-- Penerangan Aduan (read-only) -->
                         <div class="form-row">
-                            <label for="statusTerkini">Status Terkini :</label>
+                            <label for="peneranganMasalah">Penerangan Aduan:</label>
+                            <input type="text" id="peneranganMasalah" value="<?= htmlspecialchars($row['peneranganMasalah']); ?>" readonly>
+                        </div>
+
+                        <!-- Status Terkini (Dropdown) -->
+                        <div class="form-row">
+                            <label for="statusTerkini">Status Terkini:</label>
                             <select id="statusTerkini">
-                                <option value="Dalam Tindakan">Dalam Tindakan</option>
-                                <option value="Selesai">Selesai</option>
-                                <option value="Hantar Kedai">Hantar Kedai</option>
+                                <?php while ($statusRow = $statusResult->fetch_assoc()): ?>
+                                    <option value="<?= $statusRow['idStatus']; ?>" 
+                                        <?= ($statusRow['idStatus'] == $row['idStatus']) ? 'selected' : ''; ?>>
+                                        <?= $statusRow['namaStatus']; ?>
+                                    </option>
+                                <?php endwhile; ?>
                             </select>
                         </div>
 
+                        <!-- Attachment (editable) -->
                         <div class="form-row">
-                            <label for="tarikhMula">Tarikh & Masa Mula :</label>
-                            <input type="date" id="tarikhMula">
+                            <label for="attachmentTechnician">Attachment Technician :</label>
+                            <input type="file" id="attachmentTechnician" name="attachmentTechnician">
+                            <button type="button" class="remove-btn" onclick="document.getElementById('attachment').value = ''">Buang Fail</button>
+                            <!-- ni nak tgk attachment aduan -->
+                            <?php if ($row['attachment']): ?>
+                                <p>Attachment Aduan: <a href="uploads/<?= htmlspecialchars($row['attachment']); ?>" target="_blank">View</a></p>  <!-- when clicks the link, file open in new tab -->
+                            <?php endif; ?>
                         </div>
 
+                        <!-- Technician's Note (editable) -->
                         <div class="form-row">
-                            <label for="tarikhSiap">Tarikh & Masa Siap :</label>
-                            <input type="text" id="tarikhSiap" readonly>    <!-- readonly = user cannot manually edit -->
+                            <label for="notaTechnician">Nota Technician :</label>
+                            <textarea id="notaTechnician" name="notaTechnician"><?= htmlspecialchars($row['notaTechnician']); ?></textarea>
                         </div>
 
+                        <!-- Date and Time Done (read-only) -->
                         <div class="form-row">
-                            <label>Attachment Bukti Pembaiakan :</label>
-                            <div class="file-input-wrapper">
-                                <input type="file">
-                                <button type="button">🗑️</button>
-                            </div>
+                            <label for="tarikhMasaDone">Date & Time Done:</label>
+                            <input type="text" id="tarikhMasaDone" value="<?= htmlspecialchars($row['tarikhAduan']); ?> <?= htmlspecialchars($row['masaAduan']); ?>" readonly>
                         </div>
 
+                        <!-- save button -->
                         <div class="form-row">
-                            <label for="notaTeknikal">Nota Tindakan Teknikal :</label>
-                            <textarea id="notaTeknikal" placeholder="Masukkan nota..."></textarea>
-                        </div>
-
-                        <div class="form-row">
-                            <button type="submit" class="submit-btn">Hantar</button>
+                            <button type="submit" name="submitData" class="submitData">Simpan</button>
+                            <!-- buat auto refresh JGN LUPA-->
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- auto set tarikh and masa when status 'selesai' -->
-    <script>
-    const form = document.querySelector("form");
-    const statusTerkini = document.getElementById("statusTerkini");
-    const tarikhSiap = document.getElementById("tarikhSiap");
-
-    form.addEventListener("submit", function () {
-        if (statusTerkini.value === "Selesai") {
-            const now = new Date();
-
-            const dateTime =
-                now.getFullYear() + "-" +
-                String(now.getMonth() + 1).padStart(2, "0") + "-" +
-                String(now.getDate()).padStart(2, "0") + " " +
-                String(now.getHours()).padStart(2, "0") + ":" +
-                String(now.getMinutes()).padStart(2, "0");
-
-            tarikhSiap.value = dateTime;
-        }
-    });
-</script>
 </body>
 </html>
