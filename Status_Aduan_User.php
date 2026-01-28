@@ -7,21 +7,43 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'user') {
     exit;
 }
 
+$perananNama = "Pengguna";
+$namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
+$idJabatan = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
+
+
+$jabatanNama = "Unknown";
+if ($idJabatan != '') {
+    $sqlJabatan = "SELECT namaJabatan FROM jabatan WHERE idJabatan = '$idJabatan'";
+    $resultJabatan = mysqli_query($conn, $sqlJabatan);
+    if ($row = mysqli_fetch_assoc($resultJabatan)) {
+        $jabatanNama = $row['namaJabatan'];
+    }
+}
+
 $noIC = $_SESSION['noIC'];
-$perananNama = "Pengguna"; 
 
 $sql = "SELECT 
+            a.idAduan,
             a.tarikhAduan,
             a.masaAduan,
             a.lokasi,
             a.jenisMasalah,
+            IFNULL(t.namaTechnician, '-') AS namaTechnician,
+            a.tarikhmasaSiap,
             s.namaStatus
         FROM aduan a
-        JOIN status s ON a.idStatus = s.idStatus
+        JOIN status s 
+            ON s.idStatus = a.idStatus
+        LEFT JOIN technician t 
+            ON t.noICTechnician = a.noICTechnician
         WHERE a.noIC = ?
-        ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
+        ORDER BY a.idAduan DESC";
 
 $stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("SQL Prepare Error: " . $conn->error);
+}
 $stmt->bind_param("s", $noIC);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -199,11 +221,10 @@ body {
         
         <div class="sidebar">
             <div class="user-info">
-                <img src="profile.jpg" alt="User">
+                <img src="img/profile.jpg" alt="User">
                 <div>
-                   <strong><?= htmlspecialchars($_SESSION['nama']); ?></strong> 
-                   <small><?= htmlspecialchars($perananNama); ?></small>
-
+                    <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                    <small><?= htmlspecialchars($perananNama); ?></small>
                 </div>
             </div>
 
@@ -247,9 +268,14 @@ body {
                             echo "<td>".date('d/m/Y', strtotime($row['tarikhAduan']))." ".$row['masaAduan']."</td>";
                             echo "<td>".htmlspecialchars($row['lokasi'])."</td>";
                             echo "<td>".htmlspecialchars($row['jenisMasalah'])."</td>";
-                            echo "<td>-</td>"; // kosongkan Technician
-                            echo "<td>-</td>"; // kosongkan Tarikh Kemaskini
-                            echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
+                           echo "<td>".htmlspecialchars($row['namaTechnician'])."</td>";
+                           $kemaskini = $row['tarikhmasaSiap'];
+                                if (!empty($kemaskini)) {
+                                    echo "<td>".date('d/m/Y H:i:s', strtotime($kemaskini))."</td>";
+                                } else {
+                                    echo "<td>-</td>";
+                                }
+                             echo "<td>".htmlspecialchars($row['namaStatus'])."</td>";
                             echo "</tr>";
                         }
                     } else {
@@ -276,4 +302,3 @@ function confirmLogout() {
 
 </body>
 </html>
- 
