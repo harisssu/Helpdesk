@@ -2,6 +2,15 @@
 session_start();
 include "db_connect.php";
 
+date_default_timezone_set('Asia/Kuala_Lumpur');
+
+if (isset($_SESSION['success_message'])) {
+        // Display the success message
+        echo '<script>alert("' . $_SESSION['success_message'] . '");</script>';
+        // Unset the session message so it doesn’t show again
+        unset($_SESSION['success_message']);
+}
+
 // Ensure the technician is logged in and has the correct role
 if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'technician') {
     header("Location: login.html");
@@ -32,7 +41,8 @@ $sql = "SELECT
             a.tarikhAduan,
             a.masaAduan,
             a.notaTechnician,
-            a.attachmentTechnician
+            a.attachmentTechnician,
+            a.tarikhmasaSiap
         FROM aduan a
         WHERE a.idAduan = ?";
 $stmt = $conn->prepare($sql);
@@ -50,20 +60,29 @@ if (isset($_POST['submitData'])) {
 
     // Retrieve the technician's note from the form
     $notaTechnician = $_POST['notaTechnician'];
+    $statusTerkini = $_POST['statusTerkini']; // The selected status
+
+    // Check if status is 'Selesai' and set the timestamp
+    if ($statusTerkini == '3') {  // Assuming '3' is the idStatus for 'Selesai'
+        $tarikhSelesai = date("Y-m-d H:i:s");  // Get the current date and time
+    } else {
+        $tarikhSelesai = NULL;  // No date if status is not 'Selesai'
+    }
 
     // Update the Technician's Note in the database
     $updateSql = "UPDATE aduan 
-                  SET notaTechnician = ? 
+                  SET notaTechnician = ?, idStatus = ?, tarikhmasaSiap = ?
                   WHERE idAduan = ?";
     $updateStmt = $conn->prepare($updateSql);
-    $updateStmt->bind_param("si", $notaTechnician, $aduanId);  // Binding parameters
+    $updateStmt->bind_param("sisi", $notaTechnician, $statusTerkini, $tarikhSelesai, $aduanId);  // Binding parameters
     $updateStmt->execute();
 
-    // Check if the update was successful
     if ($updateStmt->affected_rows > 0) {
-        echo "<script>alert('Technician\'s note updated successfully');</script>";
-    } else {
-        echo "<script>alert('Failed to update the technician\'s note');</script>";
+        // Set success message in session
+        $_SESSION['success_message'] = "Technician's note updated successfully"; 
+        // Redirect to the same page
+        header("Location: Lihat_Technician.php?idAduan=" . $aduanId);
+        exit;
     }
 
     // Close the prepared statement
@@ -230,6 +249,23 @@ $stmt->close();
             font-weight: bold;
             cursor: pointer;
             }
+
+            /*
+            #code ni utk cantikkan button. hias later
+            .submit-btn {
+            padding: 8px 25px;
+            border-radius: 10px;
+            border: none;
+            background: #f44336; 
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            }
+            */
+
+            .submit-btn:hover {
+            background: #d09191;  /*hover button back*/
+            }
     </style>
 </head>
 <body>
@@ -289,7 +325,7 @@ $stmt->close();
                         <!-- Status Terkini (Dropdown) -->
                         <div class="form-row">
                             <label for="statusTerkini">Status Terkini:</label>
-                            <select id="statusTerkini">
+                            <select name="statusTerkini" id="statusTerkini">
                                 <?php while ($statusRow = $statusResult->fetch_assoc()): ?>
                                     <option value="<?= $statusRow['idStatus']; ?>" 
                                         <?= ($statusRow['idStatus'] == $row['idStatus']) ? 'selected' : ''; ?>>
@@ -318,14 +354,20 @@ $stmt->close();
 
                         <!-- Date and Time Done (read-only) -->
                         <div class="form-row">
-                            <label for="tarikhMasaDone">Date & Time Done:</label>
-                            <input type="text" id="tarikhMasaDone" value="<?= htmlspecialchars($row['tarikhAduan']); ?> <?= htmlspecialchars($row['masaAduan']); ?>" readonly>
+                            <label for="tarikhMasaDone">Tarikh & Masa Siap:</label>
+                            <input type="text" id="tarikhMasaDone" value="<?= htmlspecialchars($row['tarikhmasaSiap']) ? htmlspecialchars($row['tarikhmasaSiap']) : '        -'; ?>" readonly>
                         </div>
 
                         <!-- save button -->
                         <div class="form-row">
                             <button type="submit" name="submitData" class="submitData">Simpan</button>
-                            <!-- buat auto refresh JGN LUPA-->
+                        </div>
+
+                        <!-- back button -->
+                        <div class="form-row">
+                            <a href="Senarai_Aduan_Technician.php" class="back-btn">
+                                <button type="button" class="submit-btn">Kembali</button>
+                            </a>
                         </div>
                     </form>
                 </div>
