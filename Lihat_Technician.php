@@ -69,12 +69,23 @@ if (isset($_POST['submitData'])) {
         $tarikhSelesai = NULL;  // No date if status is not 'Selesai'
     }
 
+    // Handle ATTACHMENT TECHNICIAN
+    $attachmentTechnician = "";
+    if (!empty($_FILES['attachmentTechnician']['name'])) {
+        $filename = basename($_FILES['attachmentTechnician']['name']);
+        $target = "attachmentTechnician/" . $filename;  // Save to 'attachmentTechnician/' folder
+        if (move_uploaded_file($_FILES['attachmentTechnician']['tmp_name'], $target)) {
+            $attachmentTechnician = $filename;  // Save the filename to the database
+        }
+    }
+    // END OF ATTACHMENT TECHNICIAN
+
     // Update the Technician's Note in the database
     $updateSql = "UPDATE aduan 
-                  SET notaTechnician = ?, idStatus = ?, tarikhmasaSiap = ?
+                  SET notaTechnician = ?, idStatus = ?, tarikhmasaSiap = ?, attachmentTechnician = ?
                   WHERE idAduan = ?";
     $updateStmt = $conn->prepare($updateSql);
-    $updateStmt->bind_param("sisi", $notaTechnician, $statusTerkini, $tarikhSelesai, $aduanId);  // Binding parameters
+    $updateStmt->bind_param("ssssi", $notaTechnician, $statusTerkini, $tarikhSelesai, $attachmentTechnician, $aduanId);  // Binding parameters
     $updateStmt->execute();
 
     if ($updateStmt->affected_rows > 0) {
@@ -335,16 +346,34 @@ $stmt->close();
                             </select>
                         </div>
 
-                        <!-- Attachment (editable) -->
+                        <!-- Technician's Proof Attachment -->
+                        <div class="form-row">
+                            <label for="attachmentTechnician">Attachment Technician:</label>
+                            <input type="file" id="attachmentTechnician" name="attachmentTechnician">
+
+                            <!-- Button to clear the file input -->
+                            <button type="button" class="remove-btn" onclick="document.getElementById('attachmentTechnician').value = ''">Remove File</button>
+
+                            <!-- If an attachment exists, display the current attachment with a remove option -->
+                            <?php if ($row['attachmentTechnician']): ?>
+                                <p>Current Attachment: <a href="attachmentTechnician/<?= htmlspecialchars($row['attachmentTechnician']); ?>" target="_blank">View</a></p>
+                                <label>
+                                    <input type="checkbox" name="removeAttachment" value="1"> Remove this attachment
+                                </label>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- SEE THIS LATER. ATTACHMENT)
                         <div class="form-row">
                             <label for="attachmentTechnician">Attachment Technician :</label>
                             <input type="file" id="attachmentTechnician" name="attachmentTechnician">
                             <button type="button" class="remove-btn" onclick="document.getElementById('attachment').value = ''">Buang Fail</button>
-                            <!-- ni nak tgk attachment aduan -->
+                            #ni nak tgk attachment aduan
                             <?php if ($row['attachment']): ?>
-                                <p>Attachment Aduan: <a href="uploads/<?= htmlspecialchars($row['attachment']); ?>" target="_blank">View</a></p>  <!-- when clicks the link, file open in new tab -->
+                                <p>Attachment Aduan: <a href="uploads/<?= htmlspecialchars($row['attachment']); ?>" target="_blank">View</a></p>  #when clicks the link, file open in new tab
                             <?php endif; ?>
                         </div>
+                        -->
 
                         <!-- Technician's Note (editable) -->
                         <div class="form-row">
