@@ -362,5 +362,3 @@ if (!$result) {
     </script>
 </body>
 </html>
-.
-.
