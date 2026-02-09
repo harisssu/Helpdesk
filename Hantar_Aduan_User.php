@@ -1,4 +1,4 @@
-<?php.
+<?php
 session_start();
 date_default_timezone_set("Asia/Kuala_Lumpur");
 include "db_connect.php";
@@ -370,4 +370,5 @@ function confirmLogout() {
 
 </body>
 </html>
+
 
