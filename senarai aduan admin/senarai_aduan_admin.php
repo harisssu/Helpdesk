@@ -14,23 +14,39 @@ $perananNama = "Admin";
 $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
 $fromDate = isset($_GET['from_date']) ? $_GET['from_date'] : '';
 $toDate   = isset($_GET['to_date']) ? $_GET['to_date'] : '';
-$jabatanFilter = isset($_GET['jabatan']) ? $_GET['jabatan'] : '';
+$jabatanFilter = isset($_GET['jabatan']) ? intval($_GET['jabatan']) : 0;
+
+// Ambil list jabatan untuk dropdown
+$jabatanList = [];
+$jabatanRes = mysqli_query($conn, "SELECT idJabatan, namaJabatan FROM jabatan ORDER BY namaJabatan ASC");
+if ($jabatanRes) {
+    while ($j = mysqli_fetch_assoc($jabatanRes)) {
+        $jabatanList[] = $j;
+    }
+}
 
 $sql = "SELECT 
             a.idAduan,
-            u.namaUser,
-            j.namaJabatan,
+            COALESCE(u.namaUser, k.namaKetua, '-') AS namaPengadu,
+            COALESCE(ju.namaJabatan, jk.namaJabatan, '-') AS namaJabatan,
             a.jenisMasalah,
             a.tarikhAduan,
             s.namaStatus,
             a.idStatus,
-            t.namaTechnician
+
+            COALESCE(t.namaTechnician, '-') AS namaTechnician
+
         FROM aduan a
         LEFT JOIN user u ON a.noIC = u.noIC
-        LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
+        LEFT JOIN jabatan ju ON u.idJabatan = ju.idJabatan
+
+        LEFT JOIN ketuaunit k ON a.noICKetua = k.noICKetua
+        LEFT JOIN jabatan jk ON k.idJabatan = jk.idJabatan
+
         LEFT JOIN status s ON a.idStatus = s.idStatus
         LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
         WHERE 1=1";
+
 
 if ($statusFilter !== '') {
     $sql .= " AND a.idStatus = '".intval($statusFilter)."'";
@@ -44,9 +60,10 @@ if ($fromDate !== '' && $toDate !== '') {
     $sql .= " AND DATE(a.tarikhAduan) <= '$toDate'";
 }   
 
-if ($jabatanFilter !== '') {
-    $sql .= " AND j.namaJabatan = '".mysqli_real_escape_string($conn, $jabatanFilter)."'";
+if ($jabatanFilter > 0) {
+    $sql .= " AND (u.idJabatan = $jabatanFilter OR k.idJabatan = $jabatanFilter)";
 }
+
 
 $sql .= " ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
 
@@ -182,27 +199,25 @@ if (!$result) {
                 font-size: 0.9rem;
             }
 
-            .sidebar {
-                width: 240px;
-                background: #e6e6e6;
-                border-right: none;
-                flex-shrink: 0;
+           .sidebar{
+            width:240px;
+            background:#e6e6e6;
+            flex-shrink:0;
+            display:flex;
+            flex-direction:column;
+}
 
-                display: flex;
-                flex-direction: column;
-            }
+            .menu{ flex:1; }
 
-            .menu {
-                flex: 1; /
+            .sidebar-logout{
+            padding:15px;
+            margin-top:auto;
             }
-
-            .sidebar-logout {
-                padding: 15px;
-            }
+    
 
             .logout-btn {
                 width: 100%;
-                padding: 8px 0;
+                padding: 8px;
                 border: none;
                 border-radius: 8px;
                 background: #0306a0ff;
@@ -259,7 +274,7 @@ if (!$result) {
             <div class="layout">
                 <div class="sidebar">
                     <div class="user-info">
-                        <img src="profile.jpg" alt="User">
+                        <img src="img\profile.jpg" alt="User">
                         <div>
                             <strong><?= htmlspecialchars($namaUser); ?></strong><br>
                             <small><?= htmlspecialchars($perananNama); ?></small>
@@ -285,70 +300,15 @@ if (!$result) {
                         <div class="filter-row">
                                 <form method="GET" action="">
                                     <label>Jabatan:</label>
-                                        <select name="jabatan" style="width: 10rem; padding: 0.2rem;">
-                                            <option value="">Semua</option>
-                                            <option value="Bedah Mulut" <?= ($jabatanFilter=='Bedah Mulut')?'selected':'' ?>>Bedah Mulut</option>
-                                            <option value="Bilik PA Pengarah" <?= ($jabatanFilter=='Bilik PA Pengarah')?'selected':'' ?>>Bilik PA Pengarah</option>
-                                            <option value="CSSU" <?= ($jabatanFilter=='CSSU')?'selected':'' ?>>CSSU</option>
-                                            <option value="Daycare" <?= ($jabatanFilter=='Daycare')?'selected':'' ?>>Daycare</option>
-                                            <option value="Dewan Bedah" <?= ($jabatanFilter=='Dewan Bedah')?'selected':'' ?>>Dewan Bedah</option>
-                                            <option value="Dewan Bersalin" <?= ($jabatanFilter=='Dewan Bersalin')?'selected':'' ?>>Dewan Bersalin</option>
-                                            <option value="ENT" <?= ($jabatanFilter=='ENT')?'selected':'' ?>>ENT</option>
-                                            <option value="Farmasi Bekalan Wad" <?= ($jabatanFilter=='Farmasi Bekalan Wad')?'selected':'' ?>>Farmasi Bekalan Wad</option>
-                                            <option value="Farmasi DICE" <?= ($jabatanFilter=='Farmasi DICE')?'selected':'' ?>>Farmasi DICE</option>
-                                            <option value="Farmasi Klinik Pakar" <?= ($jabatanFilter=='Farmasi Klinik Pakar')?'selected':'' ?>>Farmasi Klinik Pakar</option>
-                                            <option value="Farmasi Logistik" <?= ($jabatanFilter=='Farmasi Logistik')?'selected':'' ?>>Farmasi Logistik</option>
-                                            <option value="Farmasi Pengeluaran" <?= ($jabatanFilter=='Farmasi Pengeluaran')?'selected':'' ?>>Farmasi Pengeluaran</option>
-                                            <option value="Farmasi Wad" <?= ($jabatanFilter=='Farmasi Wad')?'selected':'' ?>>Farmasi Wad</option>
-                                            <option value="Forensik" <?= ($jabatanFilter=='Forensik')?'selected':'' ?>>Forensik</option>
-                                            <option value="Hemodialisis" <?= ($jabatanFilter=='Hemodialisis')?'selected':'' ?>>Hemodialisis</option>
-                                            <option value="ICU" <?= ($jabatanFilter=='ICU')?'selected':'' ?>>ICU</option>
-                                            <option value="Jabatan Dietetik dan Sajian" <?= ($jabatanFilter=='Jabatan Dietetik dan Sajian')?'selected':'' ?>>Jabatan Dietetik dan Sajian</option>
-                                            <option value="Jabatan Pergigian Pediatrik" <?= ($jabatanFilter=='Jabatan Pergigian Pediatrik')?'selected':'' ?>>Jabatan Pergigian Pediatrik</option>
-                                            <option value="Kawalan Infeksi" <?= ($jabatanFilter=='Kawalan Infeksi')?'selected':'' ?>>Kawalan Infeksi</option>
-                                            <option value="Kecemasan" <?= ($jabatanFilter=='Kecemasan')?'selected':'' ?>>Kecemasan</option>
-                                            <option value="Klinik Pakar Obstetrik" <?= ($jabatanFilter=='Klinik Pakar Obstetrik')?'selected':'' ?>>Klinik Pakar Obstetrik</option>
-                                            <option value="Klinik Pakar Ortopedik" <?= ($jabatanFilter=='Klinik Pakar Ortopedik')?'selected':'' ?>>Klinik Pakar Ortopedik</option>
-                                            <option value="Klinik Pakar Pediatrik" <?= ($jabatanFilter=='Klinik Pakar Pediatrik')?'selected':'' ?>>Klinik Pakar Pediatrik</option>
-                                            <option value="Klinik Pakar Psikiatri" <?= ($jabatanFilter=='Klinik Pakar Psikiatri')?'selected':'' ?>>Klinik Pakar Psikiatri</option>
-                                            <option value="Methadone" <?= ($jabatanFilter=='Methadone')?'selected':'' ?>>Methadone</option>
-                                            <option value="MOPD" <?= ($jabatanFilter=='MOPD')?'selected':'' ?>>MOPD</option>
-                                            <option value="Oftalmologi" <?= ($jabatanFilter=='Oftalmologi')?'selected':'' ?>>Oftalmologi</option>
-                                            <option value="Pejabat Pengarah" <?= ($jabatanFilter=='Pejabat Pengarah')?'selected':'' ?>>Pejabat Pengarah</option>
-                                            <option value="Penyeliaan Kejururawatan" <?= ($jabatanFilter=='Penyeliaan Kejururawatan')?'selected':'' ?>>Penyeliaan Kejururawatan</option>
-                                            <option value="Perpustakaan" <?= ($jabatanFilter=='Perpustakaan')?'selected':'' ?>>Perpustakaan</option>
-                                            <option value="Porter" <?= ($jabatanFilter=='Porter')?'selected':'' ?>>Porter</option>
-                                            <option value="SCN/NICU" <?= ($jabatanFilter=='SCN/NICU')?'selected':'' ?>>SCN/NICU</option>
-                                            <option value="SOPD" <?= ($jabatanFilter=='SOPD')?'selected':'' ?>>SOPD</option>
-                                            <option value="Unit Fisioterapi" <?= ($jabatanFilter=='Unit Fisioterapi')?'selected':'' ?>>Unit Fisioterapi</option>
-                                            <option value="Unit Hal Ehwal Islam" <?= ($jabatanFilter=='Unit Hal Ehwal Islam')?'selected':'' ?>>Unit Hal Ehwal Islam</option>
-                                            <option value="Unit IT" <?= ($jabatanFilter=='Unit IT')?'selected':'' ?>>Unit IT</option>
-                                            <option value="Unit Kejuruteraan" <?= ($jabatanFilter=='Unit Kejuruteraan')?'selected':'' ?>>Unit Kejuruteraan</option>
-                                            <option value="Unit Kerja Sosial" <?= ($jabatanFilter=='Unit Kerja Sosial')?'selected':'' ?>>Unit Kerja Sosial</option>
-                                            <option value="Unit Keselamatan" <?= ($jabatanFilter=='Unit Keselamatan')?'selected':'' ?>>Unit Keselamatan</option>
-                                            <option value="Unit Keselamatan dan Kesihatan" <?= ($jabatanFilter=='Unit Keselamatan dan Kesihatan')?'selected':'' ?>>Unit Keselamatan dan Kesihatan</option>
-                                            <option value="Unit Kewangan dan Hasil" <?= ($jabatanFilter=='Unit Kewangan dan Hasil')?'selected':'' ?>>Unit Kewangan dan Hasil</option>
-                                            <option value="Unit Khidmat Pengurusan" <?= ($jabatanFilter=='Unit Khidmat Pengurusan')?'selected':'' ?>>Unit Khidmat Pengurusan</option>
-                                            <option value="Unit Kualiti" <?= ($jabatanFilter=='Unit Kualiti')?'selected':'' ?>>Unit Kualiti</option>
-                                            <option value="Unit Patologi dan Tabung Darah" <?= ($jabatanFilter=='Unit Patologi dan Tabung Darah')?'selected':'' ?>>Unit Patologi dan Tabung Darah</option>
-                                            <option value="Unit Pembangunan dan Perumahan" <?= ($jabatanFilter=='Unit Pembangunan dan Perumahan')?'selected':'' ?>>Unit Pembangunan dan Perumahan</option>
-                                            <option value="Unit Pemulihan Carakerja" <?= ($jabatanFilter=='Unit Pemulihan Carakerja')?'selected':'' ?>>Unit Pemulihan Carakerja</option>
-                                            <option value="Unit Pendidikan Kesihatan" <?= ($jabatanFilter=='Unit Pendidikan Kesihatan')?'selected':'' ?>>Unit Pendidikan Kesihatan</option>
-                                            <option value="Unit Pengurusan Aset dan Stor" <?= ($jabatanFilter=='Unit Pengurusan Aset dan Stor')?'selected':'' ?>>Unit Pengurusan Aset dan Stor</option>
-                                            <option value="Unit Perhubungan Awam" <?= ($jabatanFilter=='Unit Perhubungan Awam')?'selected':'' ?>>Unit Perhubungan Awam</option>
-                                            <option value="Unit Psikologi" <?= ($jabatanFilter=='Unit Psikologi')?'selected':'' ?>>Unit Psikologi</option>
-                                            <option value="Unit Radiologi" <?= ($jabatanFilter=='Unit Radiologi')?'selected':'' ?>>Unit Radiologi</option>
-                                            <option value="Unit Rekod Perubatan" <?= ($jabatanFilter=='Unit Rekod Perubatan')?'selected':'' ?>>Unit Rekod Perubatan</option>
-                                            <option value="Unit Sumber Manusia" <?= ($jabatanFilter=='Unit Sumber Manusia')?'selected':'' ?>>Unit Sumber Manusia</option>
-                                            <option value="Wad 10" <?= ($jabatanFilter=='Wad 10')?'selected':'' ?>>Wad 10</option>
-                                            <option value="Wad 2" <?= ($jabatanFilter=='Wad 2')?'selected':'' ?>>Wad 2</option>
-                                            <option value="Wad 3" <?= ($jabatanFilter=='Wad 3')?'selected':'' ?>>Wad 3</option>
-                                            <option value="Wad 4" <?= ($jabatanFilter=='Wad 4')?'selected':'' ?>>Wad 4</option>
-                                            <option value="Wad 5" <?= ($jabatanFilter=='Wad 5')?'selected':'' ?>>Wad 5</option>
-                                            <option value="Wad 6" <?= ($jabatanFilter=='Wad 6')?'selected':'' ?>>Wad 6</option>
-                                            <option value="Wad 8" <?= ($jabatanFilter=='Wad 8')?'selected':'' ?>>Wad 8</option>
-                                            <option value="Wad 9" <?= ($jabatanFilter=='Wad 9')?'selected':'' ?>>Wad 9</option>
-                                        </select>
+                                    <select name="jabatan" style="width: 10rem; padding: 0.2rem;">
+                                        <option value="">Semua</option>
+                                        <?php foreach ($jabatanList as $j): ?>
+                                            <option value="<?= (int)$j['idJabatan']; ?>"
+                                                <?= ($jabatanFilter == (int)$j['idJabatan']) ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($j['namaJabatan']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
 
                                     <label>From:</label>
                                     <input type="date" name="from_date" value="<?= isset($_GET['from_date']) ? $_GET['from_date'] : '' ?>">
@@ -400,9 +360,9 @@ if (!$result) {
                                         echo "<tr>
                                                 <td>{$bil}</td>
                                                 <td>{$row['idAduan']}</td>
-                                                <td>{$row['namaUser']}</td>
+                                                <td>".htmlspecialchars($row['namaPengadu'])."</td>
                                                 <td>{$row['jenisMasalah']}</td>
-                                                <td>{$row['namaJabatan']}</td>
+                                                <td>".htmlspecialchars($row['namaJabatan'])."</td>
                                                 <td>{$row['namaTechnician']}</td>
                                                 <td>{$row['tarikhAduan']}</td>
                                                 <td>{$status}</td>
@@ -469,11 +429,11 @@ if (!$result) {
                         $('#m_jenisMasalah').text(data.jenisMasalah);
                         $('#m_tarikhAduan').text(data.tarikhAduan);
                         $('#m_masaAduan').text(data.masaAduan);
-                        $('#m_namaUser').text(data.namaUser);
-                        $('#m_noIC').text(data.noIC);
+                        $('#m_namaUser').text(data.namaPengadu);
+                        $('#m_noIC').text(data.noIC ? data.noIC : data.noICKetua);
                         $('#m_lokasi').text(data.lokasi);
-                        $('#m_peneranganMasalah').text(data.peneranganMasalah);
-                        $('#m_idStatus').text(data.idStatus);
+                        $('#m_peneranganMasalah').text(data.peneranganMasalah && data.peneranganMasalah.trim() !== ''? data.peneranganMasalah: '-');
+                        $('#m_status').text(data.namaStatus ?? data.idStatus);
                         $.getJSON('get_technician.php', function (techs) {
 
                             const select = $('#m_noICTechnician');
@@ -495,10 +455,46 @@ if (!$result) {
                                 ? data.attachment
                                 : "uploads/" + data.attachment;
 
-                            $('#m_attachment').attr('href', url).show();
-                            } else {
-                            $('#m_attachment').hide();
-                            }
+                            $('#m_attachment')
+                                .attr('href', url)
+                                .text('Lihat')
+                                .show();
+
+                        } else {
+                            $('#m_attachment')
+                                .removeAttr('href')
+                                .text('-')
+                                .show();
+                        }
+
+                        $('#m_notaTechnician').text(
+                            data.notaTechnician && data.notaTechnician.trim() !== ''
+                                ? data.notaTechnician
+                                : '-'
+                        );
+
+                        $('#m_tarikhSiap').text(
+                            data.tarikhmasaSiap ? data.tarikhmasaSiap : '-'
+                        );
+
+                        if (data.attachmentTechnician && data.attachmentTechnician.trim() !== "") {
+
+                        const url = data.attachmentTechnician.startsWith("uploads/")
+                            ? data.attachmentTechnician
+                            : "uploads/" + data.attachmentTechnician;
+
+                        $('#m_attachmentTech')
+                            .attr('href', url)
+                            .text('Lihat')
+                            .show();
+
+                    } else {
+                        $('#m_attachmentTech')
+                            .removeAttr('href')
+                            .text('-')
+                            .show();
+                    }
+
 
                         $('#aduanModal').css('display', 'flex');
                     },
@@ -572,6 +568,7 @@ if (!$result) {
                 width:600px;
                 max-height:90vh;
                 overflow:auto;
+                padding-bottom:20px;
                 border-radius:8px;
                 position:relative;
             ">
@@ -592,7 +589,7 @@ if (!$result) {
                     </tr>
                     <tr><td><b>Lokasi</b></td><td id="m_lokasi"></td></tr>
                     <tr><td><b>Penerangan Aduan</b></td><td id="m_peneranganMasalah"></td></tr>
-                    <tr><td><b>Status</b></td><td id="m_idStatus"></td></tr>
+                    <tr><td><b>Status</b></td><td id="m_status"></td></tr>
                     <tr>
                         <td><b>Tetapkan Technician</b></td>
                         <td>
@@ -604,6 +601,29 @@ if (!$result) {
                     <tr><td><b>Attachment Aduan</b></td>
                         <td><a id="m_attachment" target="_blank">Lihat</a></td>
                     </tr>
+                    <tr>
+                    <td colspan="2">
+                        <hr>
+                        <b>Laporan Technician</b><br><br>
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td><b>Tarikh Siap</b></td>
+                    <td id="m_tarikhSiap"></td>
+                </tr>
+
+                <tr>
+                    <td><b>Nota Technician</b></td>
+                    <td id="m_notaTechnician"></td>
+                </tr>
+
+                <tr>
+                    <td><b>Attachment Technician</b></td>
+                    <td><a id="m_attachmentTech" target="_blank">-</a></td>
+                </tr>
+
                 </table>
 
                 <br>
