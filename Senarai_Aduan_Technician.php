@@ -14,27 +14,88 @@ $namaUser       = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
 $idJabatan      = isset($_SESSION['idJabatan']) ? $_SESSION['idJabatan'] : '';
 $perananNama    = "Technician";
 
+//filter
+$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
+$fromDate = isset($_GET['from_date']) ? $_GET['from_date'] : '';
+$toDate   = isset($_GET['to_date']) ? $_GET['to_date'] : '';
+$jabatanFilter = isset($_GET['jabatan']) ? intval($_GET['jabatan']) : 0;
+$masalahFilter = isset($_GET['masalah']) ? $_GET['masalah'] : '';
+
+// Ambil list jabatan untuk dropdown
+$jabatanList = [];
+$jabatanRes = mysqli_query($conn, "SELECT idJabatan, namaJabatan FROM jabatan ORDER BY namaJabatan ASC");
+if ($jabatanRes) {
+    while ($j = mysqli_fetch_assoc($jabatanRes)) {
+        $jabatanList[] = $j;
+    }
+}
+
 // Query to fetch the complaints assigned to the technician
+// Construct SQL query with filters
 $sql = "SELECT 
-            a.idAduan,
-            u.namaUser,
-            j.namaJabatan,
-            a.jenisMasalah,
-            a.tarikhAduan,
-            a.masaAduan,
-            s.namaStatus,
-            a.idStatus,
-            t.namaTechnician
+            a.idAduan, u.namaUser, j.namaJabatan, a.jenisMasalah, a.tarikhAduan,
+            a.masaAduan, s.namaStatus, a.idStatus, t.namaTechnician
         FROM aduan a
         LEFT JOIN user u ON a.noIC = u.noIC
         LEFT JOIN jabatan j ON u.idJabatan = j.idJabatan
         LEFT JOIN status s ON a.idStatus = s.idStatus
         LEFT JOIN technician t ON a.noICTechnician = t.noICTechnician
-        WHERE a.noICTechnician = ?  -- Only get complaints assigned to the logged-in technician
-        ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
+        WHERE a.noICTechnician = ?";
 
+// Initialize filterParams array
+$filterParams = [];
+$filterParams[] = $noICTechnician;  // Add technician's IC as the first parameter
+
+// Add filters to SQL query
+$filterConditions = [];
+$filterParams = [$noICTechnician]; // Ensure technician IC is always part of the query
+
+// Filter by status
+if ($statusFilter !== '') {
+    $filterConditions[] = "a.idStatus = ?";
+    $filterParams[] = $statusFilter;
+}
+
+// Filter by date range
+if ($fromDate !== '' && $toDate !== '') {
+    $filterConditions[] = "DATE(a.tarikhAduan) BETWEEN ? AND ?";
+    $filterParams[] = $fromDate;
+    $filterParams[] = $toDate;
+} elseif ($fromDate !== '') {
+    $filterConditions[] = "DATE(a.tarikhAduan) >= ?";
+    $filterParams[] = $fromDate;
+} elseif ($toDate !== '') {
+    $filterConditions[] = "DATE(a.tarikhAduan) <= ?";
+    $filterParams[] = $toDate;
+}
+
+// Filter by jabatan
+if ($jabatanFilter > 0) {
+    $filterConditions[] = "(u.idJabatan = ? OR j.idJabatan = ?)";
+    $filterParams[] = $jabatanFilter;
+    $filterParams[] = $jabatanFilter;
+}
+
+// Filter by masalah
+if ($masalahFilter !== '') {
+    $filterConditions[] = "a.jenisMasalah LIKE ?";
+    $filterParams[] = '%' . $masalahFilter . '%';
+}
+
+// Combine the WHERE clause and filters
+if (count($filterConditions) > 0) {
+    $sql .= " AND " . implode(" AND ", $filterConditions);
+}
+
+$sql .= " ORDER BY a.tarikhAduan DESC, a.masaAduan DESC";
+
+// Prepare and execute the SQL statement
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $noICTechnician);  // Bind the technician's IC number to the query
+
+// Dynamically determine the parameter types (e.g., 's' for string, 'i' for integer)
+$paramTypes = str_repeat('s', count($filterParams));  // Assume all parameters are strings ('s') for now
+
+$stmt->bind_param($paramTypes, ...$filterParams);  // Bind all parameters dynamically
 $stmt->execute();
 $result = $stmt->get_result();  // Get the result of the query
 
@@ -194,6 +255,42 @@ if (!$result) {
             font-weight: bold;
             cursor: pointer;
             }
+
+            .filter-box {
+                background: #e6e6e6;
+                border: 2px solid #000;
+                padding: 15px;
+                margin-bottom: 30px;
+            }
+
+            .filter-row {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                flex-wrap: wrap;
+                margin-bottom: 1rem;
+            }
+
+            .filter-row label {
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            .filter-row input,
+            .filter-row select {
+                padding: 6px;
+                width: 160px;
+            }
+
+            .filter-row button {
+                padding: 4px 20px;
+                border: none;
+                background: #0306a0ff;
+                color: #fff;
+                font-weight: bold;
+                border-radius: 6px;
+                cursor: pointer;
+            }
     </style>
 </head>
 <body>
@@ -225,89 +322,50 @@ if (!$result) {
             </div>
 
             <div class="content">
-                <!-- Filter section -->
-             <div style="margin-botto,:15px;">
-                Status:
-                <select id="statusFilter" onchange="filterTable()">     <!--Status option-->
-                    <option value="">All</option>
-                    <option value="1">Dalam Tindakan</option>
-                    <option value="2">Selesai</option>
-                    <option value="3">Hantar Kedai</option>
-                </select>
+            <!-- Filter section -->
+                <div class="filter-box">
+                    <div class="filter-row">
+                        <form method="GET" action="">
+                            <label>Jabatan:</label>
+                            <select name="jabatan" style="width: 10rem; padding: 0.2rem;">
+                                <option value="">Semua</option>
+                                <?php foreach ($jabatanList as $j): ?>
+                                    <option value="<?= (int)$j['idJabatan']; ?>"
+                                        <?= ($jabatanFilter == (int)$j['idJabatan']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($j['namaJabatan']); ?>
+                                    </option>
+                                <?php endforeach; ?>                                </select>
 
-                Jabatan:
-                <select id="unitFilter" onchange="filterTable()">
-                    <option value="">All</option>               <!--Add more option later-->
-                    <option value="Bedah Mulut">Bedah Mulut</option>
-                    <option value="Bilik PA Pengarah">Bilik PA Pengarah</option>
-                    <option value="CSSU">CSSU</option>
-                    <option value="Daycare">Daycare</option>
-                    <option value="Dewan Bedah">Dewan Bedah</option>
-                    <option value="Dewan Bersalin">Dewan Bersalin</option>
-                    <option value="ENT">ENT</option>
-                    <option value="Farmasi Bekalan Wad">Farmasi Bekalan Wad</option>
-                    <option value="Farmasi DICE">Farmasi DICE</option>
-                    <option value="Farmasi Klinik Pakar">Farmasi Klinik Pakar</option>
-                    <option value="Farmasi Logistik">Farmasi Logistik</option>
-                    <option value="Farmasi Pengeluaran">Farmasi Pengeluaran</option>
-                    <option value="Farmasi Wad">Farmasi Wad</option>
-                    <option value="Forensik">Forensik</option>
-                    <option value="Hemodialisis">Hemodialisis</option>
-                    <option value="ICU">ICU</option>
-                    <option value="Jabatan Dietetik dan Sajian">Jabatan Dietetik dan Sajian</option>
-                    <option value="Jabatan Pergigian Pediatrik">Jabatan Pergigian Pediatrik</option>
-                    <option value="Kawalan Infeksi">Kawalan Infeksi</option>
-                    <option value="Kecemasan">Kecemasan</option>
-                    <option value="Klinik Pakar Obstetrik">Klinik Pakar Obstetrik</option>
-                    <option value="Klinik Pakar Ortopedik">Klinik Pakar Ortopedik</option>
-                    <option value="Klinik Pakar Pediatrik">Klinik Pakar Pediatrik</option>
-                    <option value="Klinik Pakar Psikiatri">Klinik Pakar Psikiatri</option>
-                    <option value="Methadone">Methadone</option>
-                    <option value="MOPD">MOPD</option>
-                    <option value="Oftalmologi">Oftalmologi</option>
-                    <option value="Pejabat Pengarah">Pejabat Pengarah</option>
-                    <option value="Penyeliaan Kejururawatan">Penyeliaan Kejururawatan</option>
-                    <option value="Perpustakaan">Perpustakaan</option>
-                    <option value="Porter">Porter</option>
-                    <option value="SCN/NICU">SCN/NICU</option>
-                    <option value="SOPD">SOPD</option>
-                    <option value="Unit Fisioterapi">Unit Fisioterapi</option>
-                    <option value="Unit Hal Ehwal Islam">Unit Hal Ehwal Islam</option>
-                    <option value="Unit Teknologi Maklumat">Unit Teknologi Maklumat</option>
-                    <option value="Unit Kejuruteraan">Unit Kejuruteraan</option>
-                    <option value="Unit Kerja Sosial">Unit Kerja Sosial</option>
-                    <option value="Unit Keselamatan">Unit Keselamatan</option>
-                    <option value="Unit Keselamatan dan Kesihatan">Unit Keselamatan dan Kesihatan</option>
-                    <option value="Unit Kewangan dan Hasil">Unit Kewangan dan Hasil</option>
-                    <option value="Unit Khidmat Pengurusan">Unit Khidmat Pengurusan</option>
-                    <option value="Unit Kualiti">Unit Kualiti</option>
-                    <option value="Unit Patologi dan Tabung Darah">Unit Patologi dan Tabung Darah</option>
-                    <option value="Unit Pembangunan dan Perumahan">Unit Pembangunan dan Perumahan</option>
-                    <option value="Unit Pemulihan Carakerja">Unit Pemulihan Carakerja</option>
-                    <option value="Unit Pendidikan Kesihatan">Unit Pendidikan Kesihatan</option>
-                    <option value="Unit Pengurusan Aset dan Stor">Unit Pengurusan Aset dan Stor</option>
-                    <option value="Unit Perhubungan Awam">Unit Perhubungan Awam</option>
-                    <option value="Unit Psikologi">Unit Psikologi</option>
-                    <option value="Unit Radiologi">Unit Radiologi</option>
-                    <option value="Unit Rekod Perubatan">Unit Rekod Perubatan</option>
-                    <option value="Unit Sumber Manusia">Unit Sumber Manusia</option>
-                    <option value="Wad 10">Wad 10</option>
-                    <option value="Wad 2">Wad 2</option>
-                    <option value="Wad 3">Wad 3</option>
-                    <option value="Wad 4">Wad 4</option>
-                    <option value="Wad 5">Wad 5</option>
-                    <option value="Wad 6">Wad 6</option>
-                    <option value="Wad 8">Wad 8</option>
-                    <option value="Wad 9">Wad 9</option>
-                </select>
+                            <label>From:</label>
+                            <input type="date" name="from_date" value="<?= isset($_GET['from_date']) ? $_GET['from_date'] : '' ?>">
 
-                Tarikh:
-                <input type="date" id="dateFilter" onchange="filterTable()">
+                            <label>To:</label>
+                            <input type="date" name="to_date" value="<?= isset($_GET['to_date']) ? $_GET['to_date'] : '' ?>">
 
-                Cari:
-                <input type="text" id="searchInput" placeholder="Cari..." onkeyup="filterTable()">
-            </div>
-        <!-- End of filter section -->
+                            <label>Status:</label>
+                            <select name="status">
+                            <option value="">Semua</option>
+                                <option value="2" <?= (isset($_GET['status']) && $_GET['status']=='2')?'selected':'' ?>>Dalam Tindakan</option>
+                                <option value="3" <?= (isset($_GET['status']) && $_GET['status']=='3')?'selected':'' ?>>Selesai</option>
+                                <option value="4" <?= (isset($_GET['status']) && $_GET['status']=='4')?'selected':'' ?>>Hantar Kedai</option>
+                            </select>
+
+                            <label>Jenis Masalah:</label>
+                            <select name="masalah" style="width: 10rem; padding: 0.2rem;">
+                                <option value="">Semua</option>
+                                <!-- Define predefined masalah options -->
+                                <option value="Komputer" <?= (isset($_GET['masalah']) && $_GET['masalah']=='Komputer')?'selected':'' ?>>Komputer</option>
+                                <option value="Printer" <?= (isset($_GET['masalah']) && $_GET['masalah']=='Printer')?'selected':'' ?>>Printer</option>
+                                <option value="Software" <?= (isset($_GET['masalah']) && $_GET['masalah']=='Software')?'selected':'' ?>>Software</option>
+                                <option value="Internet" <?= (isset($_GET['masalah']) && $_GET['masalah']=='Internet')?'selected':'' ?>>Internet</option>
+                                <option value="Monitor" <?= (isset($_GET['masalah']) && $_GET['masalah']=='Monitor')?'selected':'' ?>>Monitor</option>
+                                <option value="Lain-lain" <?= (isset($_GET['masalah']) && $_GET['masalah']=='Lain-lain')?'selected':'' ?>>Lain-lain</option>
+                            </select>
+
+                            <button type="submit">Cari</button>
+                        </form>
+                    </div>
+            <!-- End of filter section -->
 
                 <table class="aduan-table">
                     <thead>
