@@ -333,6 +333,18 @@ $stmt->close();
                             <input type="text" id="peneranganMasalah" value="<?= htmlspecialchars($row['peneranganMasalah']); ?>" readonly>
                         </div>
 
+                        <!-- Attachment Aduan -->
+                        <div class="form-row">
+                            <label for="attachment"></label>
+                            
+                            <!-- If there's an attachment, display the link to the file -->
+                            <?php if ($row['attachment']): ?>
+                                <p>Attachment Aduan: <a href="uploads/<?= htmlspecialchars($row['attachment']); ?>" target="_blank">View</a></p>
+                            <?php else: ?>
+                                <p>No attachment uploaded.</p>
+                            <?php endif; ?>
+                            </div>
+                            
                         <!-- Status Terkini (Dropdown) -->
                         <div class="form-row">
                             <label for="statusTerkini">Status Terkini:</label>
@@ -362,18 +374,6 @@ $stmt->close();
                                 </label>
                             <?php endif; ?>
                         </div>
-
-                        <!-- SEE THIS LATER. ATTACHMENT)
-                        <div class="form-row">
-                            <label for="attachmentTechnician">Attachment Technician :</label>
-                            <input type="file" id="attachmentTechnician" name="attachmentTechnician">
-                            <button type="button" class="remove-btn" onclick="document.getElementById('attachment').value = ''">Buang Fail</button>
-                            #ni nak tgk attachment aduan
-                            <?php if ($row['attachment']): ?>
-                                <p>Attachment Aduan: <a href="uploads/<?= htmlspecialchars($row['attachment']); ?>" target="_blank">View</a></p>  #when clicks the link, file open in new tab
-                            <?php endif; ?>
-                        </div>
-                        -->
 
                         <!-- Technician's Note (editable) -->
                         <div class="form-row">
