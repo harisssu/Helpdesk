@@ -34,7 +34,7 @@ $sql = "SELECT
             s.namaStatus,
             a.idStatus,
 
-            COALESCE(t.namaTechnician, '-') AS namaTechnician
+            COALESCE(t.namaTechnician, 'Technician Tidak Ditetapkan') AS namaTechnician
 
         FROM aduan a
         LEFT JOIN user u ON a.noIC = u.noIC
@@ -274,7 +274,7 @@ if (!$result) {
             <div class="layout">
                 <div class="sidebar">
                     <div class="user-info">
-                        <img src="img\profile.jpg" alt="User">
+                        <img src="profile.jpg" alt="User">
                         <div>
                             <strong><?= htmlspecialchars($namaUser); ?></strong><br>
                             <small><?= htmlspecialchars($perananNama); ?></small>
@@ -328,20 +328,20 @@ if (!$result) {
                                     <button type="submit">Cari</button>
                                 </form>
                             </div>
-                                <table class="aduan-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Bil</th>
-                                            <th>Id Aduan</th>
-                                            <th>Nama Pengadu</th>
-                                            <th>Jenis Masalah</th>
-                                            <th>Unit</th>
-                                            <th>Nama Technician</th>
-                                            <th>Tarikh Aduan</th>
-                                            <th>Status</th>
-                                            <th>Tindakan</th>
-                                        </tr>
-                                    </thead> 
+                            <table class="aduan-table">
+                                <thead>
+                                    <tr>
+                                        <th>Bil</th>
+                                        <th>Id Aduan</th>
+                                        <th>Nama Pengadu</th>
+                                        <th>Jenis Masalah</th>
+                                        <th>Unit</th>
+                                        <th>Nama Technician</th>
+                                        <th>Tarikh Aduan</th>
+                                        <th>Status</th>
+                                        <th>Tindakan</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                 <?php
                                 $bil = 1;
@@ -357,19 +357,21 @@ if (!$result) {
                                             default: $status = "Tidak Diketahui";
                                         }
 
+                                        $technician = !empty($row['namaTechnician']) 
+                                            ? $row['namaTechnician'] 
+                                            : 'Technician not assigned yet';
+
                                         echo "<tr>
                                                 <td>{$bil}</td>
                                                 <td>{$row['idAduan']}</td>
                                                 <td>".htmlspecialchars($row['namaPengadu'])."</td>
                                                 <td>{$row['jenisMasalah']}</td>
-                                                <td>".htmlspecialchars($row['namaJabatan'])."</td>
-                                                <td>{$row['namaTechnician']}</td>
+                                                <td>{$row['namaJabatan']}</td>
+                                                <td>{$technician}</td>
                                                 <td>{$row['tarikhAduan']}</td>
                                                 <td>{$status}</td>
                                                 <td>
-                                                    <button 
-                                                        class='lihat-btn'
-                                                        data-id='{$row['idAduan']}'
+                                                    <button class='lihat-btn' data-id='{$row['idAduan']}'
                                                         style='
                                                             padding:4px 10px;
                                                             background:#0306a0ff;
@@ -383,11 +385,12 @@ if (!$result) {
                                                 </td>
                                             </tr>";
 
-
                                         $bil++;
                                     }
                                 } else {
-                                    echo "<tr><td colspan='7'>Tiada rekod aduan</td></tr>";
+                                    echo "<tr>
+                                            <td colspan='9' style='text-align:center;'>Tiada rekod aduan</td>
+                                        </tr>";
                                 }
                                 ?>
                                 </tbody>
