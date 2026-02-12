@@ -1,0 +1,471 @@
+<?php
+session_start();
+include "db_connect.php";
+
+date_default_timezone_set('Asia/Kuala_Lumpur');
+
+if (isset($_SESSION['success_message'])) {
+        // Display the success message
+        echo '<script>alert("' . $_SESSION['success_message'] . '");</script>';
+        // Unset the session message so it doesn’t show again
+        unset($_SESSION['success_message']);
+}
+
+// Ensure the technician is logged in and has the correct role
+if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'technician') {
+    header("Location: login.html");
+    exit;
+}
+// Ensure session variables are available
+$namaUser = $_SESSION['nama'] ?? 'Unknown'; // Fallback if not set
+$perananNama = $_SESSION['role'] ?? 'Technician'; // Fallback if not set
+
+// Get the complaint ID from the URL
+$aduanId = $_GET['idAduan'] ?? null;  // Get the idAduan from the URL
+
+// Check if the ID is valid
+if (!$aduanId) {
+    die("Complaint ID is missing or invalid.");
+}
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch complaint data from the database
+$sql = "SELECT 
+            a.idAduan,
+            a.peneranganMasalah,
+            a.idStatus,
+            a.attachment,
+            a.tarikhAduan,
+            a.masaAduan,
+            a.notaTechnician,
+            a.attachmentTechnician,
+            a.tarikhmasaSiap
+        FROM aduan a
+        WHERE a.idAduan = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $aduanId);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();  // Fetch the data for this specific complaint
+} else {
+    die("Complaint not found.");
+}
+
+if (isset($_POST['submitData'])) {
+
+    // Retrieve the technician's note from the form
+    $notaTechnician = $_POST['notaTechnician'];
+    $statusTerkini = $_POST['statusTerkini']; // The selected status
+
+    // Check if status is 'Selesai' and set the timestamp
+    if ($statusTerkini == '3') {  // Assuming '3' is the idStatus for 'Selesai'
+        $tarikhSelesai = date("Y-m-d H:i:s");  // Get the current date and time
+    } else {
+        $tarikhSelesai = NULL;  // No date if status is not 'Selesai'
+    }
+
+    // Handle ATTACHMENT TECHNICIAN
+    $attachmentTechnician = "";
+    if (!empty($_FILES['attachmentTechnician']['name'])) {
+        $filename = basename($_FILES['attachmentTechnician']['name']);
+        $target = "attachmentTechnician/" . $filename;  // Save to 'attachmentTechnician/' folder
+        if (move_uploaded_file($_FILES['attachmentTechnician']['tmp_name'], $target)) {
+            $attachmentTechnician = $filename;  // Save the filename to the database
+        }
+    }
+    // END OF ATTACHMENT TECHNICIAN
+
+    // Update the Technician's Note in the database
+    $updateSql = "UPDATE aduan 
+                  SET notaTechnician = ?, idStatus = ?, tarikhmasaSiap = ?, attachmentTechnician = ?
+                  WHERE idAduan = ?";
+    $updateStmt = $conn->prepare($updateSql);
+    $updateStmt->bind_param("ssssi", $notaTechnician, $statusTerkini, $tarikhSelesai, $attachmentTechnician, $aduanId);  // Binding parameters
+    $updateStmt->execute();
+
+    if ($updateStmt->affected_rows > 0) {
+        // Set success message in session
+        $_SESSION['success_message'] = "Technician's note updated successfully"; 
+        // Redirect to the same page
+        header("Location: Lihat_Technician.php?idAduan=" . $aduanId);
+        exit;
+    }
+
+    // Close the prepared statement
+    $updateStmt->close();
+}
+
+// Fetch status options (excluding 'Baru')
+$statusSql = "SELECT idStatus, namaStatus FROM status WHERE idStatus != 1";
+$statusResult = $conn->query($statusSql);
+
+// Close the statement
+$stmt->close();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>e-ICT Aduan - Detail Aduan</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;           /*set the font style of all text*/
+            margin: 0;                                  /*make bg touch edges of screen*/
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url("background.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;               /*bg stays still while scrolling*/
+            position: relative;
+            overflow: hidden;                           /*hide anythings outside the screen, prevent unwanted scrollbars*/
+            }
+            
+            .app {
+            width: 100%;                /*make element take 100% of screen width*/
+            height: 100vh;              /*make element as tall as screen height (viewpoint height)*/
+            display: flex;              /*allows easy layout control*/
+            flex-direction: column;     /*arrange items top to bottom*/
+            background: transparent;    /*bg is see-through*/
+            }
+
+            .topbar {
+            height: 50px;
+            background: #58385eff;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: none;
+            flex-shrink: 0;
+            }
+
+            .topbar .system {       /*e-ICT Aduan*/
+            font-weight: bold;
+            color: #fff;
+            margin-right: 35px;
+            font-size: 30px;
+            }
+
+            .topbar .page-title {   /*Senarai Aduan*/
+            font-weight: bold;
+            color: #ffffffff;
+            margin-left:30px; 
+            font-size: 25px;
+            }
+
+            .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            }
+
+            .sidebar {
+            width: 240px;
+            background: #e6e6e6;
+            border-right: none;
+            flex-shrink: 0;
+            }
+
+            .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            border-bottom: 1px solid #000;
+            }
+
+            .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            }
+
+            .menu a {
+            display: block;
+            padding: 15px 18px;
+            text-decoration: none;
+            color: #000;
+            border-bottom: 1px solid #000;
+            }
+
+            .menu a:hover {
+            background: #d9d9d9;
+            }
+
+            .menu a.active {
+            color: #1e40ff;
+            font-weight: bold;
+            background: transparent;
+            }
+
+            .content {
+            flex: 1;
+            padding: 30px;
+            background:transparent;
+            overflow: auto;
+            }
+
+            /* for content inside */
+            .detail-container {             /* MAIN BOX */
+                background: #dcdcdc;
+                border: 2px solid #000;
+                padding: 20px;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+
+            .detail-container h2{           /* TITLE */
+                margin-top: 0;
+                margin-bottom: 25px;
+                font-size: 22px;
+                font-weight: bold;
+            }
+
+            .section-title {                /* SECTION TITLE */
+                font-weight: bold;
+                margin-top: 25px;
+                margin-bottom: 10px;
+                padding-bottom: 5px;
+                border-bottom: 2px solid #000;
+            }
+
+            .form-row {                     /* FORM ROW */
+                margin-bottom: 18px;
+            }
+
+            .form-row label {               /* LABEL */
+                display: block;
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+
+            .form-row input,                /* INPUT */
+            .form-row select,               /* SELECT */
+            .form-row textarea {            /* TEXTAREA */
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #000;
+                background: #fff;
+            }
+
+            TEXTAREA {                      /* TEXTAREA HEIGHT */
+                height: 90px;
+                resize: none;       
+            }
+
+            .button-group {                 /* BUTTON AREA */
+                margin-top: 30px:
+                text-align: right;
+            }
+
+            .primary-btn {                  /* PRIMARY BUTTON */
+                padding: 8px 20px;
+                backgroud: #1e40ff;
+                color: #fff;
+                border: none;
+                cursor: pointer;
+                margin-left: 10px;
+            }
+
+            .secondary-btn {                /* SECONDARY BUTTON */
+                padding: 8px 20px;
+                background: #ccc;
+                border: 1px solid #000;
+                cursor: pointer;
+            }
+
+            .aduan-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            }
+
+            .aduan-table th,            /*table header cell. titles at the top of table. comma (,) means apply the same style to both th td*/
+            .aduan-table td {           /*table data cell. normal cells inside table rows*/
+            border: 1px solid #000;   /*black border around evey cell*/
+            padding: 10px;              /*spcae inside each cell*/
+            text-align: center;         /*text is centered*/
+            }
+
+            .aduan-table th {
+            background: #e6e6e6;
+            font-weight: bold;
+            }
+
+            .sidebar {
+            width: 240px;
+            background: #e6e6e6;
+            border-right: none;
+            flex-shrink: 0;
+
+            display: flex;
+            flex-direction: column;
+            }
+
+            .menu {
+            flex: 1; /
+            }
+
+            .sidebar-logout {
+            padding: 15px;
+            }
+
+            .logout-btn {
+            width: 100%;
+            padding: 8px 0;
+            border: none;
+            border-radius: 8px;
+            background: #58385eff;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            }
+
+            /*
+            #code ni utk cantikkan button. hias later
+            .submit-btn {
+            padding: 8px 25px;
+            border-radius: 10px;
+            border: none;
+            background: #f44336; 
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            }
+            */
+
+            .submit-btn:hover {
+            background: #d09191;  /*hover button back*/
+            }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="system">e-ICT Aduan</div>
+            <div class="page-title">Detail Aduan</div>
+        </div>
+
+        <!-- MAIN LAYOUT -->
+        <div class="layout">
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <div class="user-info">
+                    <img src="profile.jpg" alt="User">
+                    <div>
+                        <strong><?= htmlspecialchars($namaUser); ?></strong><br>
+                        <small><?= htmlspecialchars($perananNama); ?></small>
+                    </div>
+                </div>
+
+                <div class="menu">
+                    <a href="Senarai_Aduan_Technician.php">Senarai Aduan</a>
+                </div>
+
+                <div class="sidebar-logout">
+                    <form action="logout.php" method="post">
+                        <button type="submit" onclick="return confirmLogout()" class="logout-btn">Log Keluar</button>
+                    </form>
+                </div>
+            </div>
+            <script>
+                function confirmLogout() {
+                    return confirm("Anda Pasti Untuk Log Keluar?");
+                }
+            </script>
+
+            <!-- CONTENT AREA -->
+            <div class="content">
+                <div class="detail-container">
+                    <h2>DETAIL ADUAN (ID: <?= htmlspecialchars($aduanId); ?>)</h2>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="idAduan" value="<?= $aduanId; ?>">
+
+                        <!-- Penerangan Aduan (read-only) -->
+                        <div class="form-row">
+                            <label for="peneranganMasalah">Penerangan Aduan:</label>
+                            <input type="text" id="peneranganMasalah" value="<?= htmlspecialchars($row['peneranganMasalah']); ?>" readonly>
+                        </div>
+
+                        <!-- Attachment Aduan -->
+                        <div class="form-row">
+                            <label for="attachment"></label>
+                            
+                            <!-- If there's an attachment, display the link to the file -->
+                            <?php if ($row['attachment']): ?>
+                                <p>Attachment Aduan: <a href="uploads/<?= htmlspecialchars($row['attachment']); ?>" target="_blank">View</a></p>
+                            <?php else: ?>
+                                <p>No attachment uploaded.</p>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Technician's Proof Attachment -->
+                        <div class="form-row">
+                            <label for="attachmentTechnician">Attachment Technician:</label>
+                            <input type="file" id="attachmentTechnician" name="attachmentTechnician">
+
+                            <!-- Button to clear the file input -->
+                            <button type="button" class="remove-btn" onclick="document.getElementById('attachmentTechnician').value = ''">Remove File</button>
+
+                            <!-- If an attachment exists, display the current attachment with a remove option -->
+                            <?php if ($row['attachmentTechnician']): ?>
+                                <p>Current Attachment: <a href="attachmentTechnician/<?= htmlspecialchars($row['attachmentTechnician']); ?>" target="_blank">View</a></p>
+                                <label>
+                                    <input type="checkbox" name="removeAttachment" value="1"> Remove this attachment
+                                </label>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Technician's Note (editable) -->
+                        <div class="form-row">
+                            <label for="notaTechnician">Nota Technician :</label>
+                            <textarea id="notaTechnician" name="notaTechnician"><?= htmlspecialchars($row['notaTechnician']); ?></textarea>
+                        </div>
+
+                        <!-- Status Terkini (Dropdown) -->
+                        <div class="form-row">
+                            <label for="statusTerkini">Status Terkini:</label>
+                            <select name="statusTerkini" id="statusTerkini">
+                                <?php while ($statusRow = $statusResult->fetch_assoc()): ?>
+                                    <option value="<?= $statusRow['idStatus']; ?>" 
+                                        <?= ($statusRow['idStatus'] == $row['idStatus']) ? 'selected' : ''; ?>>
+                                        <?= $statusRow['namaStatus']; ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+
+                        <!-- Date and Time Done (read-only) -->
+                        <div class="form-row">
+                            <label for="tarikhMasaDone">Tarikh & Masa Siap:</label>
+                            <input type="text" id="tarikhMasaDone" value="<?= htmlspecialchars($row['tarikhmasaSiap']) ? htmlspecialchars($row['tarikhmasaSiap']) : '        -'; ?>" readonly>
+                        </div>
+
+                        <!-- save button -->
+                        <div class="form-row">
+                            <button type="submit" name="submitData" class="submitData">Simpan</button>
+                        </div>
+
+                        <!-- back button -->
+                        <div class="form-row">
+                            <a href="Senarai_Aduan_Technician.php" class="back-btn">
+                                <button type="button" class="submit-btn">Kembali</button>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
