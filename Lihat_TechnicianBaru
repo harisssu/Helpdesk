@@ -16,12 +16,10 @@ if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'technician') {
     header("Location: login.html");
     exit;
 }
-// Ensure session variables are available
-$namaUser = $_SESSION['nama'] ?? 'Unknown'; // Fallback if not set
-$perananNama = $_SESSION['role'] ?? 'Technician'; // Fallback if not set
+$namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
+$perananNama = isset($_SESSION['role']) ? $_SESSION['role'] : 'Technician';
+$aduanId = isset($_GET['idAduan']) ? $_GET['idAduan'] : null;
 
-// Get the complaint ID from the URL
-$aduanId = $_GET['idAduan'] ?? null;  // Get the idAduan from the URL
 
 // Check if the ID is valid
 if (!$aduanId) {
@@ -263,13 +261,13 @@ $stmt->close();
             }
 
             .button-group {                 /* BUTTON AREA */
-                margin-top: 30px:
+                margin-top: 30px;
                 text-align: right;
             }
 
             .primary-btn {                  /* PRIMARY BUTTON */
                 padding: 8px 20px;
-                backgroud: #1e40ff;
+                background: #1e40ff;
                 color: #fff;
                 border: none;
                 cursor: pointer;
