@@ -16,10 +16,12 @@ if (!isset($_SESSION['noIC']) || $_SESSION['role'] !== 'technician') {
     header("Location: login.html");
     exit;
 }
-$namaUser = isset($_SESSION['nama']) ? $_SESSION['nama'] : 'Unknown';
-$perananNama = isset($_SESSION['role']) ? $_SESSION['role'] : 'Technician';
-$aduanId = isset($_GET['idAduan']) ? $_GET['idAduan'] : null;
+// Ensure session variables are available
+$namaUser = $_SESSION['nama'] ?? 'Unknown'; // Fallback if not set
+$perananNama = $_SESSION['role'] ?? 'Technician'; // Fallback if not set
 
+// Get the complaint ID from the URL
+$aduanId = $_GET['idAduan'] ?? null;  // Get the idAduan from the URL
 
 // Check if the ID is valid
 if (!$aduanId) {
@@ -217,7 +219,7 @@ $stmt->close();
                 background: #dcdcdc;
                 border: 2px solid #000;
                 padding: 20px;
-                max-width: 900px;
+                max-width: 700px;
                 margin: 0 auto;
             }
 
@@ -249,7 +251,7 @@ $stmt->close();
             .form-row input,                /* INPUT */
             .form-row select,               /* SELECT */
             .form-row textarea {            /* TEXTAREA */
-                width: 100%;
+                width: 70%;
                 padding: 8px;
                 border: 1px solid #000;
                 background: #fff;
@@ -261,13 +263,13 @@ $stmt->close();
             }
 
             .button-group {                 /* BUTTON AREA */
-                margin-top: 30px;
+                margin-top: 30px:
                 text-align: right;
             }
 
             .primary-btn {                  /* PRIMARY BUTTON */
                 padding: 8px 20px;
-                background: #1e40ff;
+                backgroud: #1e40ff;
                 color: #fff;
                 border: none;
                 cursor: pointer;
@@ -326,23 +328,6 @@ $stmt->close();
             color: #fff;
             font-weight: bold;
             cursor: pointer;
-            }
-
-            /*
-            #code ni utk cantikkan button. hias later
-            .submit-btn {
-            padding: 8px 25px;
-            border-radius: 10px;
-            border: none;
-            background: #f44336; 
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-            }
-            */
-
-            .submit-btn:hover {
-            background: #d09191;  /*hover button back*/
             }
     </style>
 </head>
@@ -452,10 +437,6 @@ $stmt->close();
                         <!-- save button -->
                         <div class="form-row">
                             <button type="submit" name="submitData" class="submitData">Simpan</button>
-                        </div>
-
-                        <!-- back button -->
-                        <div class="form-row">
                             <a href="Senarai_Aduan_Technician.php" class="back-btn">
                                 <button type="button" class="submit-btn">Kembali</button>
                             </a>
